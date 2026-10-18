@@ -163,9 +163,25 @@
         if (d.reviews) $('f_reviews').value = d.reviews;
         if (d.desc) $('f_desc').value = d.desc;
         if (!$('f_sub').value && d.name) $('f_sub').value = d.name.split(' ').slice(-4).join(' ');
-        var crumbs = (d.categoryList || []).slice().reverse(), hit = '';
-        crumbs.forEach(function (c) { if (!hit) CATS.concat(products.map(function (p) { return p.category; })).forEach(function (k) { if (!hit && k.toLowerCase() === String(c).toLowerCase()) hit = k; }); });
+        // Link afiliasi dari SiteStripe (sebelumnya tidak ikut terisi)
+        if (d.affLink) $('f_aff').value = d.affLink;
+        // Kategori: grabber mengirim `categoryList` (breadcrumb lengkap) dan/atau `category` (satu teks).
+        // Cari dari yang paling spesifik; cocok persis dulu, lalu cocok sebagian ("Football Jerseys" -> Jersey).
+        var crumbList = Array.isArray(d.categoryList) && d.categoryList.length ? d.categoryList : (d.category ? [d.category] : []);
+        var crumbs = crumbList.map(String).reverse(), hit = '', crumbHit = '';
+        var known = CATS.concat(products.map(function (p) { return p.category; }));
+        crumbs.forEach(function (c) {
+          if (hit) return;
+          known.forEach(function (k) { if (!hit && k.toLowerCase() === c.toLowerCase()) { hit = k; crumbHit = c; } });
+        });
+        if (!hit) crumbs.forEach(function (c) {
+          if (hit) return;
+          known.forEach(function (k) { if (!hit && c.toLowerCase().indexOf(k.toLowerCase()) > -1) { hit = k; crumbHit = c; } });
+        });
         if (hit) $('f_category').value = hit;
+        // Sub-kategori: crumb paling spesifik kalau berbeda dari kategori terpilih
+        var specific = crumbs[0] || '';
+        if (!$('f_subcat').value && specific && specific.toLowerCase() !== (hit || '').toLowerCase()) $('f_subcat').value = specific.slice(0, 60);
         var imgs = (d.images || []).map(String);
         var cols = (d.colors || []).map(function (c, i) {
           var name = String((c && c.name) || c || '').trim(); if (!name) return null;
@@ -179,7 +195,16 @@
         $('f_sizes').value = (d.sizes || []).join(', ');
         $('f_details').value = (d.bullets || []).join('\n');
         currentSpecs = (d.specs || []).filter(function (s) { return s && s.label && s.value; });
-        $('pasteStatus').textContent = '✅ Terisi: ' + String(d.name || '').slice(0, 60) + ' | Warna: ' + cols.length + ' | Foto: ' + imgs.length + ' | Kategori: ' + (hit || (d.category ? '"' + d.category + '" (isi manual)' : 'isi manual')) + ' - cek dulu lalu SIMPAN.';
+        var missing = [];
+        if (!d.price) missing.push('Harga');
+        if (!d.affLink) missing.push('Link afiliasi');
+        if (!hit) missing.push('Kategori');
+        if (!(d.sizes || []).length) missing.push('Ukuran');
+        if (!(d.bullets || []).length) missing.push('Poin fitur');
+        if (!currentSpecs.length) missing.push('Spesifikasi');
+        $('pasteStatus').textContent = '✅ Terisi: ' + String(d.name || '').slice(0, 60) + ' | Warna: ' + cols.length + ' | Foto: ' + imgs.length +
+          ' | Kategori: ' + (hit ? hit + (crumbHit && crumbHit.toLowerCase() !== hit.toLowerCase() ? ' (dari "' + crumbHit + '")' : '') : (d.category ? '"' + d.category + '" (isi manual)' : 'isi manual')) +
+          (missing.length ? ' | ⚠️ Belum terisi: ' + missing.join(', ') : '') + ' - cek dulu lalu SIMPAN.';
         toast('Data ditempel ✅');
       });
   }
