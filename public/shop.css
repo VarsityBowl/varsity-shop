@@ -51,8 +51,17 @@ img{max-width:100%;display:block}
 .card-img img{width:100%;height:100%;object-fit:contain}
 .noimg{color:#9ca3af;font-size:13px}
 .badges{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
-.b{font-style:normal;font-size:8px;font-weight:900;color:#fff;padding:2px 7px;border-radius:999px;letter-spacing:.04em}
-.b-or{background:#f97316}.b-gr{background:#10b981}.b-bl{background:#0284c7;font-size:10px}
+.b{font-style:normal;font-size:10px;font-weight:900;color:#fff;padding:3px 8px;border-radius:999px;letter-spacing:.04em}
+.b-or{background:#f97316}.b-gr{background:#10b981}.b-bl{background:#0284c7}.b-pu{background:#7c3aed}.b-pk{background:#db2777}.b-rd{background:#dc2626}
+.price .was{font-size:14px;font-weight:700;color:#6b7280;margin-left:6px;white-space:nowrap}.price .was b{color:#dc2626;font-weight:900}
+.legend{margin:14px 0 0;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0 14px;font-size:13px}
+.legend summary{cursor:pointer;padding:12px 0;font-weight:800;color:#3f3f46;list-style:none}
+.legend summary::-webkit-details-marker{display:none}
+.legend summary:after{content:"+";float:right;color:#f97316;font-weight:900}.legend[open] summary:after{content:"−"}
+.legend ul{list-style:none;margin:0;padding:0 0 4px;display:grid;gap:12px}
+.legend li{display:grid;grid-template-columns:96px minmax(0,1fr);gap:10px;align-items:start;color:#4b5563;line-height:1.45}
+.legend li .b{justify-self:start;margin-top:1px}
+.legend .note{margin:6px 0 12px}
 .prime{position:absolute;top:10px;right:10px}
 .price-tag{position:absolute;left:8px;bottom:8px;max-width:65%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,255,255,.95);border:1px solid #fed7aa;color:#ea580c;font-size:12px;font-weight:900;padding:3px 10px;border-radius:999px}
 .rate{position:absolute;right:8px;bottom:8px;background:rgba(255,255,255,.9);border:1px solid #e5e7eb;font-size:10px;font-weight:700;padding:2px 7px;border-radius:999px}
@@ -89,7 +98,8 @@ img{max-width:100%;display:block}
 .stars{position:relative;display:inline-block;font-size:16px;letter-spacing:1px;line-height:1;color:#d1d5db}
 .stars:before{content:"★★★★★"}
 .stars:after{content:"★★★★★";position:absolute;left:0;top:0;width:var(--pct,0);overflow:hidden;white-space:nowrap;color:#f97316}
-.badge-row{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}.badge-row .b{font-size:10px;padding:4px 10px}
+.badge-row{margin-top:12px;display:flex;gap:6px;flex-wrap:wrap}.badge-row .b{font-size:11px;padding:4px 10px}
+.info .legend{margin-top:10px}
 .pricebox{margin-top:16px;background:#fff7ed;border:1px solid #ffedd5;border-radius:12px;padding:12px 16px}
 .price{font-size:30px;line-height:1;font-weight:900;color:#ea580c}
 .pricebox .note{margin-top:6px}
