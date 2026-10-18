@@ -51,7 +51,7 @@ img{max-width:100%;display:block}
 .card-img img{width:100%;height:100%;object-fit:contain}
 .noimg{color:#9ca3af;font-size:13px}
 .badges{position:absolute;top:10px;left:10px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
-.b{font-style:normal;font-size:10px;font-weight:900;color:#fff;padding:3px 8px;border-radius:999px;letter-spacing:.04em}
+.b{font-style:normal;font-size:10px;font-weight:900;color:#fff;background:#6b7280;padding:3px 8px;border-radius:999px;letter-spacing:.04em}
 .b-or{background:#f97316}.b-gr{background:#10b981}.b-bl{background:#0284c7}.b-pu{background:#7c3aed}.b-pk{background:#db2777}.b-rd{background:#dc2626}
 .price .was{font-size:14px;font-weight:700;color:#6b7280;margin-left:6px;white-space:nowrap}.price .was b{color:#dc2626;font-weight:900}
 .legend{margin:14px 0 0;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:0 14px;font-size:13px}
