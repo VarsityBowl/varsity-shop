@@ -1,0 +1,14 @@
+{
+  "name": "varsity-shop",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev --port 8788",
+    "db:local": "wrangler d1 execute varsity-shop --local --file=schema.sql",
+    "db:remote": "wrangler d1 execute varsity-shop --remote --file=schema.sql",
+    "deploy": "wrangler pages deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}

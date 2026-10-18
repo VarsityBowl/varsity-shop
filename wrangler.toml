@@ -1,0 +1,15 @@
+name = "varsity-shop"
+pages_build_output_dir = "./public"
+compatibility_date = "2025-09-01"
+
+[vars]
+SITE_URL = "https://sportfusion.online"
+# Isi dua nilai ini setelah Cloudflare Access dibuat (lihat README langkah 5):
+ACCESS_TEAM_DOMAIN = ""   # contoh: namatim.cloudflareaccess.com
+ACCESS_AUD = ""           # "Application Audience (AUD) Tag" dari aplikasi Access
+ADMIN_EMAILS = ""         # opsional, pisah koma. Kosong = semua yang lolos Access
+
+[[d1_databases]]
+binding = "DB"
+database_name = "varsity-shop"
+database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
