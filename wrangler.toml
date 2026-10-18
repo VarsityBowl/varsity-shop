@@ -12,4 +12,4 @@ ADMIN_EMAILS = ""         # opsional, pisah koma. Kosong = semua yang lolos Acce
 [[d1_databases]]
 binding = "DB"
 database_name = "varsity-shop"
-database_id = "REPLACE_WITH_YOUR_DATABASE_ID"
+database_id = "4355b9fb-b640-4816-9a24-d70552ceba35"
