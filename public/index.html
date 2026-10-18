@@ -1,0 +1,1206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="fo-verify" content="bad11295-01a1-4e87-b082-a5509fa818aa" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Varsity Bowl — The Hub for High School Sports</title>
+  <meta name="description" content="Upcoming high school football, basketball, volleyball, soccer, baseball and more — the most prestigious matchups across the country.">
+
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="theme-color" content="#ffffff">
+  <link rel="canonical" href="https://sportfusion.online/">
+
+  <!-- Open Graph (Facebook, WhatsApp, Telegram, LinkedIn) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Varsity Bowl">
+  <meta property="og:title" content="Varsity Bowl — The Hub for High School Sports">
+  <meta property="og:description" content="Upcoming high school football, basketball, volleyball, soccer, baseball and more — the most prestigious matchups across the country.">
+  <meta property="og:url" content="https://sportfusion.online/">
+  <meta property="og:image" content="https://sportfusion.online/og-image.png">
+  <meta property="og:image:secure_url" content="https://sportfusion.online/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Varsity Bowl — The Hub for High School Sports">
+  <meta property="og:locale" content="en_US">
+
+  <!-- Twitter / X -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Varsity Bowl — The Hub for High School Sports">
+  <meta name="twitter:description" content="Upcoming high school football, basketball, volleyball, soccer, baseball and more — the most prestigious matchups across the country.">
+  <meta name="twitter:image" content="https://sportfusion.online/og-image.png">
+  <meta name="twitter:image:alt" content="Varsity Bowl — The Hub for High School Sports">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+  <style>
+    *,:after,:before{box-sizing:border-box}
+    html{-webkit-text-size-adjust:100%}
+    body{overflow-x:clip;margin:0;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#f5f5f5;color:#212121}
+    .scrollbar-none::-webkit-scrollbar{display:none}
+    .scrollbar-none{-ms-overflow-style:none;scrollbar-width:none}
+    .line-clamp-2{overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+    ::selection{background:#f97316;color:#fff}
+    html{scroll-behavior:smooth}
+    #schedule,#rankings,#trending{scroll-margin-top:7.5rem}
+    /* Wadah iklan di bagian bawah halaman */
+    #ad-native-bottom{max-width:1440px;margin:0 auto;padding:16px;}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <!-- Tombol melayang ke Shop, berkedip biar menarik perhatian -->
+  <a id="vb-shop-float" href="/shop/" aria-label="Buka Varsity Bowl Shop"
+     style="position:fixed; right:16px; bottom:88px; z-index:9999; display:inline-flex; align-items:center; gap:8px; background:#f97316; color:#fff; font-weight:900; font-size:13px; letter-spacing:.05em; padding:12px 18px; border-radius:9999px; box-shadow:0 8px 22px rgba(249,115,22,.45); text-decoration:none; animation: vbShopBlink 1.6s ease-in-out infinite;">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="9" cy="21" r="1.2"></circle>
+      <circle cx="18" cy="21" r="1.2"></circle>
+      <path d="M2.5 3h2l2.7 12.4a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 7.5H6"></path>
+    </svg>
+    SHOP
+  </a>
+  <style>
+    @keyframes vbShopBlink {
+      0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 8px 22px rgba(249,115,22,.45); }
+      50% { opacity: .75; transform: scale(1.06); box-shadow: 0 8px 28px rgba(249,115,22,.7); }
+    }
+    @media (max-width: 480px) {
+      #vb-shop-float { bottom: 80px; right: 14px; padding: 11px 16px; font-size: 12px; }
+    }
+  </style>
+
+  <script type="text/babel" data-type="module">
+    const { useState, useMemo, useEffect } = React;
+
+    // 🔥 FIREBASE CONFIG — Project: varcitybowl
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBMMd10vJuEE-opTcYSytqKraeCijrOeLs",
+      authDomain: "varcitybowl.firebaseapp.com",
+      projectId: "varcitybowl",
+      storageBucket: "varcitybowl.firebasestorage.app",
+      messagingSenderId: "57529914807",
+      appId: "1:57529914807:web:73c9fcc9dbf372892c4432"
+    };
+
+    const WATCH_URL   = "https://sportfusion.online/watch";
+    const WINDOW_DAYS = 10;
+    // Skala "semua tim + semua olahraga" (scraper v8.4): jangan tarik seluruh koleksi — ambil per halaman
+    const FEED_PAGE   = 120;    // game per halaman jadwal kronologis (bertambah saat SHOW MORE)
+    const FEED_MAX    = 1200;   // batas atas game yang dimuat per tampilan
+    const TOP_POOL    = 150;    // kandidat Top 10 (urut prestige tertinggi di seluruh koleksi)
+    const SEARCH_LIMIT = 60;    // maks dokumen per query pencarian nama tim
+    const SPORT_BASE  = ["FOOTBALL","BASKETBALL","VOLLEYBALL","SOCCER","BASEBALL","SOFTBALL","LACROSSE","WRESTLING",
+                         "TRACK-AND-FIELD","CROSS-COUNTRY","GOLF","TENNIS","SWIMMING","WATER-POLO","FIELD-HOCKEY"];
+    const HIDE_LEGACY_DOCS = true;   // sembunyikan dokumen scraper lama (tanpa logo / duplikat); false = tampilkan semua
+    const PAGE_SIZE   = 25;
+    const DEMO_MODE   = new URLSearchParams(location.search).has("demo");
+
+    const LIVE_BEFORE_MS = 30 * 60e3;
+    const LIVE_AFTER_MS  = 3 * 3600e3;
+
+    const DEMO_TOP = [
+      {id:1,sport:"FOOTBALL",time:"7:00 PM",date:"Fri Oct 25",home:"Santa Margarita",away:"Mater Dei",location:"Saddleback College",state:"CA",gameType:"League",prestige:98,description:"Trinity League showdown for the division crown.",league:"Trinity League"},
+      {id:2,sport:"FOOTBALL",time:"7:30 PM",date:"Fri Oct 25",home:"St John Bosco",away:"JSerra Catholic",location:"Panish Family Stadium",state:"CA",gameType:"League",prestige:96,description:"Bosco looks to remain unbeaten.",league:"Trinity League"},
+      {id:3,sport:"BASKETBALL",time:"8:00 PM",date:"Sat Oct 26",home:"Mater Dei",away:"Sierra Canyon",location:"Mater Dei HS",state:"CA",gameType:"Showcase",prestige:95,description:"Five-star prospects on both sides.",league:"Mission vs Trinity"},
+      {id:4,sport:"FOOTBALL",time:"7:00 PM",date:"Fri Oct 25",home:"Chaminade-Madonna",away:"St Thomas Aquinas",location:"Traz Powell Stadium",state:"FL",gameType:"Rivalry",prestige:94,description:"Florida 3M heavyweight battle.",league:"District 15-3M"},
+      {id:5,sport:"VOLLEYBALL",time:"6:30 PM",date:"Thu Oct 24",home:"Mater Dei",away:"Huntington Beach",location:"Mater Dei HS",state:"CA",gameType:"Playoff",prestige:92,description:"CIF-SS Division 1 quarterfinal.",league:"CIF-SS D1"},
+      {id:6,sport:"SOCCER",time:"5:00 PM",date:"Wed Oct 23",home:"St Benedict's Prep",away:"Seton Hall Prep",location:"St Benedict's Field",state:"NJ",gameType:"Rivalry",prestige:90,description:"Garden State classic.",league:"Super Essex"},
+      {id:7,sport:"BASEBALL",time:"4:00 PM",date:"Sat Oct 26",home:"IMG Academy",away:"Jensen Beach",location:"IMG Academy",state:"FL",gameType:"Showcase",prestige:89,description:"Elite arms showcase.",league:"Showcase Series"},
+      {id:8,sport:"BASKETBALL",time:"7:00 PM",date:"Fri Oct 25",home:"Montverde Academy",away:"AZ Compass Prep",location:"Montverde Gym",state:"FL",gameType:"Showcase",prestige:88,description:"NIBC opener.",league:"NIBC"},
+      {id:9,sport:"WRESTLING",time:"2:00 PM",date:"Sat Oct 26",home:"Blair Academy",away:"Wyoming Seminary",location:"Blair Academy",state:"NJ",gameType:"Tournament",prestige:87,description:"Early season supremacy.",league:"National Prep"},
+      {id:10,sport:"FOOTBALL",time:"7:00 PM",date:"Fri Oct 25",home:"Duncanville",away:"North Crowley",location:"Panther Stadium",state:"TX",gameType:"League",prestige:86,description:"Texas 6A titans clash.",league:"District 3-6A"}
+    ];
+    const DEMO_ALL = [...DEMO_TOP,
+      {id:11,sport:"VOLLEYBALL",time:"7:00 PM",date:"Tue Oct 22",home:"Cathedral Catholic",away:"Torrey Pines",location:"Cathedral Catholic HS",state:"CA",gameType:"League",prestige:82,description:"San Diego top two.",league:"Coastal League"},
+      {id:12,sport:"SOCCER",time:"6:00 PM",date:"Wed Oct 23",home:"Lone Peak",away:"American Fork",location:"Lone Peak HS",state:"UT",gameType:"League",prestige:78,description:"Region 4 unbeaten battle.",league:"Region 4"},
+      {id:13,sport:"BASEBALL",time:"3:30 PM",date:"Thu Oct 24",home:"Huntington Beach",away:"Orange Lutheran",location:"Ocean View HS",state:"CA",gameType:"League",prestige:84,description:"Trinity League ace matchup.",league:"Trinity League"},
+      {id:14,sport:"BASKETBALL",time:"7:30 PM",date:"Fri Oct 25",home:"Grayson",away:"Milton",location:"Grayson HS",state:"GA",gameType:"Rivalry",prestige:81,description:"Georgia 7A rematch.",league:"Region 7-7A"},
+      {id:15,sport:"FOOTBALL",time:"7:00 PM",date:"Fri Oct 25",home:"Buford",away:"Mill Creek",location:"Tom Riden Stadium",state:"GA",gameType:"League",prestige:83,description:"Buford extends streak.",league:"Region 8-7A"},
+      {id:16,sport:"VOLLEYBALL",time:"6:00 PM",date:"Thu Oct 24",home:"Hamilton Southeastern",away:"Yorktown",location:"HSE HS",state:"IN",gameType:"Playoff",prestige:79,description:"Indiana 4A final.",league:"IHSAA"},
+      {id:17,sport:"LACROSSE",time:"4:30 PM",date:"Sat Oct 26",home:"Brunswick",away:"Darien",location:"Brunswick School",state:"CT",gameType:"Rivalry",prestige:77,description:"FCIAC lead.",league:"FCIAC"},
+      {id:18,sport:"SOCCER",time:"7:00 PM",date:"Fri Oct 25",home:"Lee's Summit West",away:"Rockhurst",location:"Paragon Star",state:"MO",gameType:"Non-League",prestige:75,description:"KC metro championship.",league:"Metro"},
+      {id:19,sport:"WRESTLING",time:"10:00 AM",date:"Sat Oct 26",home:"Bergen Catholic",away:"Don Bosco Prep",location:"Bergen Catholic HS",state:"NJ",gameType:"Tournament",prestige:80,description:"Ironman preview.",league:"Big North"},
+      {id:20,sport:"TRACK",time:"9:00 AM",date:"Sat Oct 26",home:"Carmel",away:"Center Grove",location:"Carmel HS",state:"IN",gameType:"Tournament",prestige:74,description:"Sectional with sub-4 milers.",league:"IHSAA"}
+    ];
+
+    const RANKINGS = {
+      FOOTBALL:["1. Mater Dei (CA)","2. St John Bosco (CA)","3. IMG Academy (FL)","4. Duncanville (TX)","5. St Thomas Aquinas (FL)","6. Buford (GA)","7. North Shore (TX)","8. Chaminade-Madonna (FL)","9. Bishop Gorman (NV)","10. Centennial (CA)"],
+      BASKETBALL:["1. Montverde Academy (FL)","2. Sierra Canyon (CA)","3. AZ Compass Prep (AZ)","4. Link Academy (MO)","5. Mater Dei (CA)","6. IMG Academy (FL)","7. Duncanville (TX)","8. Grayson (GA)","9. Camden (NJ)","10. St Paul VI (VA)"],
+      VOLLEYBALL:["1. Mater Dei (CA)","2. Cathedral Catholic (CA)","3. Huntington Beach (CA)","4. Torrey Pines (CA)","5. Hamilton Southeastern (IN)","6. Yorktown (IN)","7. Assumption (KY)","8. Mira Costa (CA)","9. Marymount (CA)","10. Byron (MN)"],
+      SOCCER:["1. St Benedict's Prep (NJ)","2. Seton Hall Prep (NJ)","3. Lone Peak (UT)","4. Rockhurst (MO)","5. Jesuit (OR)","6. Marshall (VA)","7. Montverde Academy (FL)","8. St Ignatius (OH)","9. Lee's Summit West (MO)","10. American Fork (UT)"],
+      BASEBALL:["1. IMG Academy (FL)","2. Huntington Beach (CA)","3. Orange Lutheran (CA)","4. Jensen Beach (FL)","5. Barbe (LA)","6. Jesuit (FL)","7. Corona (CA)","8. Farragut (TN)","9. St Mary Prep (MI)","10. Argyle (TX)"]
+    };
+
+    const TRENDING = [
+      {name:"Mater Dei Monarchs",sport:"FOOTBALL",state:"CA",trend:"+2"},
+      {name:"Duncanville Panthers",sport:"FOOTBALL",state:"TX",trend:"+1"},
+      {name:"Montverde Eagles",sport:"BASKETBALL",state:"FL",trend:"HOT"},
+      {name:"St Benedict's Gray Bees",sport:"SOCCER",state:"NJ",trend:"+3"},
+      {name:"IMG Ascenders",sport:"BASEBALL",state:"FL",trend:"HOT"},
+      {name:"Blair Academy Bucs",sport:"WRESTLING",state:"NJ",trend:"+1"}
+    ];
+
+    // ---- HELPERS ----
+    const STATE_NAMES = {AL:"Alabama",AK:"Alaska",AZ:"Arizona",AR:"Arkansas",CA:"California",CO:"Colorado",CT:"Connecticut",DE:"Delaware",DC:"District of Columbia",FL:"Florida",GA:"Georgia",HI:"Hawaii",ID:"Idaho",IL:"Illinois",IN:"Indiana",IA:"Iowa",KS:"Kansas",KY:"Kentucky",LA:"Louisiana",ME:"Maine",MD:"Maryland",MA:"Massachusetts",MI:"Michigan",MN:"Minnesota",MS:"Mississippi",MO:"Missouri",MT:"Montana",NE:"Nebraska",NV:"Nevada",NH:"New Hampshire",NJ:"New Jersey",NM:"New Mexico",NY:"New York",NC:"North Carolina",ND:"North Dakota",OH:"Ohio",OK:"Oklahoma",OR:"Oregon",PA:"Pennsylvania",RI:"Rhode Island",SC:"South Carolina",SD:"South Dakota",TN:"Tennessee",TX:"Texas",UT:"Utah",VT:"Vermont",VA:"Virginia",WA:"Washington",WV:"West Virginia",WI:"Wisconsin",WY:"Wyoming"};
+
+    const str = (v) => (typeof v === "string" ? v : v == null ? "" : String(v));
+    const safeUrl = (u) => { const s = str(u).trim(); return /^https?:\/\//i.test(s) ? s : WATCH_URL; };
+
+    const logoUrl = (u) => { const s = str(u).trim(); return /^https:\/\//i.test(s) ? s : ""; };
+
+    const normalizeGame = (id, d) => ({
+      id: str(id),
+      sport: str(d.sport).toUpperCase(),
+      gender: str(d.gender).toLowerCase(),
+      home: str(d.home), away: str(d.away),
+      homeFull: str(d.homeFull) || str(d.home),
+      awayFull: str(d.awayFull) || str(d.away),
+      homeLogo: logoUrl(d.homeLogo),
+      awayLogo: logoUrl(d.awayLogo),
+      date: str(d.date),
+      rawDate: /^\d{4}-\d{2}-\d{2}$/.test(str(d.rawDate)) ? str(d.rawDate) : "",
+      time: str(d.time),
+      location: str(d.location),
+      state: str(d.state).toUpperCase(),
+      gameType: str(d.gameType),
+      league: str(d.league),
+      description: str(d.description),
+      prestige: Number(d.prestige) || 0,
+      neutral: d.neutral === true,
+      watchLink: safeUrl(d.watchLink)
+    });
+
+    const pacificDay = (offsetDays) => new Date(Date.now() + (offsetDays || 0) * 86400e3).toLocaleDateString("en-CA", { timeZone: "America/Los_Angeles" });
+    const dayPlus = (iso, n) => new Date(Date.parse(iso + "T12:00:00Z") + n * 86400e3).toISOString().slice(0, 10);
+    const fmtN = (n, plus) => Number(n).toLocaleString("en-US") + (plus ? "+" : "");
+
+    const timeToMin = (t) => {
+      const m = /(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(str(t));
+      if (!m) return 24 * 60;
+      return (parseInt(m[1], 10) % 12 + (/pm/i.test(m[3]) ? 12 : 0)) * 60 + parseInt(m[2], 10);
+    };
+    const sortKey = (g) => {
+      const t = gameStartMs(g);
+      if (t != null) return t;
+      const d = g.rawDate ? Date.parse(g.rawDate + "T23:59:59Z") : NaN;   // TBA → akhir hari
+      return isNaN(d) ? Infinity : d;
+    };
+    const byDate = (a, b) => {
+      const ka = sortKey(a), kb = sortKey(b);
+      return (ka === kb ? 0 : ka < kb ? -1 : 1) || b.prestige - a.prestige;
+    };
+    const byPrestige = (a, b) => b.prestige - a.prestige || byDate(a, b);
+
+    const fmtDate = (g) => {
+      if (!g.rawDate) return g.date;
+      const t = gameStartMs(g);
+      if (t != null) return new Date(t).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: displayTz(g) });
+      return new Date(g.rawDate + "T12:00:00Z").toLocaleDateString("en-US",
+        { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
+    };
+    const matchup = (g) => g.neutral ? `${g.away} vs ${g.home}` : `${g.away} @ ${g.home}`;
+    const sportLabel = (s) => s === "ALL" ? "ALL SPORTS" : str(s).replace(/-/g, " ");
+    const sportTitle = (g) => ((g.gender ? g.gender.toUpperCase() + " " : "") + sportLabel(g.sport)).trim();
+    const whereText = (g) => [g.location, g.state].filter(Boolean).join(" • ");
+    const initials = (name) => str(name).split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 3).toUpperCase() || "?";
+
+    // ---- LIVE STATE HELPERS ----
+    const STATE_TZ = {
+      CT:"America/New_York",DE:"America/New_York",DC:"America/New_York",FL:"America/New_York",GA:"America/New_York",
+      ME:"America/New_York",MD:"America/New_York",MA:"America/New_York",NH:"America/New_York",NJ:"America/New_York",
+      NY:"America/New_York",NC:"America/New_York",OH:"America/New_York",PA:"America/New_York",RI:"America/New_York",
+      SC:"America/New_York",VT:"America/New_York",VA:"America/New_York",WV:"America/New_York",MI:"America/New_York",
+      IN:"America/Indiana/Indianapolis",KY:"America/New_York",
+      AL:"America/Chicago",AR:"America/Chicago",IL:"America/Chicago",IA:"America/Chicago",KS:"America/Chicago",
+      LA:"America/Chicago",MN:"America/Chicago",MS:"America/Chicago",MO:"America/Chicago",NE:"America/Chicago",
+      ND:"America/Chicago",OK:"America/Chicago",SD:"America/Chicago",TN:"America/Chicago",TX:"America/Chicago",WI:"America/Chicago",
+      CO:"America/Denver",ID:"America/Boise",MT:"America/Denver",NM:"America/Denver",UT:"America/Denver",WY:"America/Denver",
+      AZ:"America/Phoenix",
+      CA:"America/Los_Angeles",NV:"America/Los_Angeles",OR:"America/Los_Angeles",WA:"America/Los_Angeles",
+      AK:"America/Anchorage",HI:"Pacific/Honolulu"
+    };
+    const gameTz = (g) => STATE_TZ[str(g.state).toUpperCase()] || "America/Los_Angeles";
+
+    const tzOffsetMs = (utcMs, tz) => {
+      const o = {};
+      new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit",
+        day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        .formatToParts(new Date(utcMs)).forEach(x => { o[x.type] = x.value; });
+      return Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour, +o.minute, +o.second) - utcMs;
+    };
+    const zonedToUtcMs = (rawDate, hh, mm, tz) => {
+      const [y, mo, d] = rawDate.split("-").map(Number);
+      const wall = Date.UTC(y, mo - 1, d, hh, mm);
+      let t = wall - tzOffsetMs(wall, tz);
+      t = wall - tzOffsetMs(t, tz);
+      return t;
+    };
+
+    const gameStartMs = (g) => {
+      if (!g.rawDate) return null;
+      const m = /(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(str(g.time));
+      if (!m) return null;
+      let hh = parseInt(m[1], 10) % 12;
+      if (/pm/i.test(m[3])) hh += 12;
+      const mm = parseInt(m[2], 10);
+      try {
+        const t = zonedToUtcMs(g.rawDate, hh, mm, gameTz(g));
+        return isNaN(t) ? null : t;
+      } catch (e) { return null; }
+    };
+
+    const IS_US_VIEWER = (() => {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+        return /^(America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage|Boise|Detroit|Juneau|Adak|Nome|Sitka|Yakutat|Metlakatla|Menominee|Indiana\/|Kentucky\/|North_Dakota\/)|Pacific\/Honolulu|US\/)/.test(tz);
+      } catch (e) { return false; }
+    })();
+    const displayTz = (g) => IS_US_VIEWER ? undefined : gameTz(g);
+    const fmtTime = (g) => {
+      const t = gameStartMs(g);
+      if (t == null) return g.time;
+      return new Date(t).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short", timeZone: displayTz(g) });
+    };
+
+    const gameState = (g, nowMs) => {
+      const t = gameStartMs(g);
+      if (t == null) return "tba";
+      const diff = t - nowMs;
+      if (diff > LIVE_BEFORE_MS) return "upcoming";
+      if (diff >= -LIVE_AFTER_MS) return "live";
+      return "past";
+    };
+
+    const startLabel = (g, nowMs) => {
+      const t = gameStartMs(g);
+      if (t == null) return "TBA";
+      const diff = t - nowMs;
+      if (diff <= -LIVE_AFTER_MS) return "FINAL";
+      if (diff <= 0) return "LIVE";
+      const mins = Math.round(diff / 60e3);
+      if (mins < 60) return "IN " + mins + "m";
+      const hrs = Math.round(mins / 60);
+      if (hrs < 24) return "IN " + hrs + "h";
+      return "IN " + Math.round(hrs / 24) + "d";
+    };
+
+    const watchHref = (g) => "watch?id=" + encodeURIComponent(g.id || "");
+
+    const LOGOS = {}, LOGO_PENDING = {}, LOGO_MISSING = {};
+    let fsReadyResolve;
+    const fsReady = new Promise((r) => { fsReadyResolve = r; });
+    const logoKeyOf = (u) => {
+      const m = /\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.[a-z]+(\?|$)/i.exec(str(u));
+      return m ? m[1].toLowerCase() : "";
+    };
+    const getCachedLogo = (k) => {
+      if (LOGOS[k]) return LOGOS[k];
+      try { const v = localStorage.getItem("vbl1:" + k); if (v) { LOGOS[k] = v; return v; } } catch (e) {}
+      return "";
+    };
+    const fetchLogo = (k) => {
+      if (LOGO_MISSING[k]) return Promise.resolve("");
+      if (LOGO_PENDING[k]) return LOGO_PENDING[k];
+      LOGO_PENDING[k] = fsReady
+        .then(({ db, doc, getDoc }) => getDoc(doc(db, "team_logos", k)))
+        .then((snap) => {
+          const d = snap.exists() ? snap.data().d : "";
+          if (typeof d === "string" && d.startsWith("data:image/")) {
+            LOGOS[k] = d;
+            try { localStorage.setItem("vbl1:" + k, d); } catch (e) {}
+            return d;
+          }
+          LOGO_MISSING[k] = true;
+          return "";
+        })
+        .catch(() => "")
+        .then((r) => { delete LOGO_PENDING[k]; return r; });
+      return LOGO_PENDING[k];
+    };
+    const TeamLogo = ({ src, name, cls, fallbackCls }) => {
+      const key = logoKeyOf(src);
+      const [data, setData] = useState(() => (key ? getCachedLogo(key) : ""));
+      useEffect(() => {
+        let alive = true;
+        if (!key) { setData(""); return; }
+        const c = getCachedLogo(key);
+        if (c) { setData(c); return; }
+        setData("");
+        fetchLogo(key).then((d) => { if (alive && d) setData(d); });
+        return () => { alive = false; };
+      }, [key]);
+      if (data) {
+        return <img src={data} alt={name} decoding="async" className={cls + " object-contain bg-white p-0.5"} />;
+      }
+      return <div className={cls + " " + fallbackCls + " flex items-center justify-center text-[11px] font-black"}>{initials(name)}</div>;
+    };
+
+    // ---- ICONS ----
+    const Icon = ({d, extra}) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+           className={extra}>{d}</svg>
+    );
+    const IcActivity = ({c}) => <Icon extra={c} d={<path d="M22 12h-2.48a2 2 0 0 0-1.93 1.46l-2.35 8.36a.25.25 0 0 1-.48 0L9.24 2.18a.25.25 0 0 0-.48 0l-2.35 8.36A2 2 0 0 1 4.49 12H2"/>}/>;
+    const IcChevron  = ({c}) => <Icon extra={c} d={<path d="m6 9 6 6 6-6"/>}/>;
+    const IcClock    = ({c}) => <Icon extra={c} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}/>;
+    const IcFlame    = ({c}) => <Icon extra={c} d={<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>}/>;
+    const IcMap      = ({c}) => <Icon extra={c} d={<><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></>}/>;
+    const IcPlay     = ({c}) => <Icon extra={c} d={<polygon points="6 3 20 12 6 21 6 3"/>}/>;
+    const IcSearch   = ({c}) => <Icon extra={c} d={<><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>}/>;
+
+    // Normalisasi teks untuk pencarian: tanpa aksen/tanda baca, huruf kecil ("St. John Bosco" = "st john bosco")
+    const norm = (v) => String(v == null ? "" : v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+
+    const SearchBox = ({ value, onChange, onSubmit, placeholder, wrapCls, inputCls }) => (
+      <div className={"relative " + wrapCls}>
+        <IcSearch c="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500 pointer-events-none"/>
+        <input aria-label="Search games" type="text" inputMode="search" enterKeyHint="search"
+          autoComplete="off" autoCorrect="off" spellCheck={false}
+          value={value} onChange={e => onChange(e.target.value)}
+          onKeyDown={e => {
+            if (e.key === "Enter") { e.preventDefault(); if (onSubmit) onSubmit(); e.currentTarget.blur(); }
+            else if (e.key === "Escape") onChange("");
+          }}
+          placeholder={placeholder}
+          className={"pl-9 pr-9 py-2 rounded-full bg-white border border-gray-300 focus:outline-none focus:border-[#f97316] placeholder:text-gray-400 shadow-sm " + inputCls}/>
+        {value && (
+          <button type="button" aria-label="Clear search" onClick={() => onChange("")}
+            className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full text-gray-600 hover:text-[#f97316] hover:bg-gray-100 flex items-center justify-center text-[18px] leading-none">×</button>
+        )}
+      </div>
+    );
+    const IcStar     = ({c}) => <Icon extra={c} d={<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>}/>;
+    const IcTrophy   = ({c}) => <Icon extra={c} d={<><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></>}/>;
+    const IcUsers    = ({c}) => <Icon extra={c} d={<><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>}/>;
+
+    const BADGE = {
+      live:       "bg-orange-50 border-orange-200 text-orange-700",
+      connecting: "bg-gray-100 border-gray-300 text-gray-600",
+      error:      "bg-red-50 border-red-200 text-red-600",
+      demo:       "bg-yellow-50 border-yellow-300 text-yellow-700"
+    };
+
+    const sportBadgeClass = (sport) =>
+      sport === "BASKETBALL" ? "bg-orange-50 text-orange-700 border-orange-200"
+      : "bg-gray-100 text-zinc-800 border-gray-300";
+
+    // ---- DATA HOOK ----
+    // Tiga sumber kecil (bukan satu query raksasa):
+    //  1) feed    → jadwal kronologis per halaman; filter sport/state dikerjakan SERVER
+    //  2) topPool → game prestige tertinggi (untuk Top 10)
+    //  3) count   → total game di window (getCountFromServer ≈ 1 read / 1000 dokumen)
+    // Filter di server butuh composite index. Kalau belum dibuat, otomatis jatuh ke filter sisi klien
+    // dan link pembuatan index dicetak di console (console.warn).
+    const mergeUnique = (...lists) => {
+      const seen = new Set(), out = [];
+      lists.forEach(l => l.forEach(g => { if (!seen.has(g.id)) { seen.add(g.id); out.push(g); } }));
+      return out;
+    };
+    const mergeCatalog = (prev, games) => {
+      const cs = {}, ct = {};
+      games.forEach(g => {
+        if (g.sport) cs[g.sport] = (cs[g.sport] || 0) + 1;
+        if (STATE_NAMES[g.state]) ct[g.state] = (ct[g.state] || 0) + 1;
+      });
+      let changed = false;
+      const sports = { ...prev.sports }, states = { ...prev.states };
+      Object.keys(cs).forEach(k => { if (!(sports[k] >= cs[k])) { sports[k] = cs[k]; changed = true; } });
+      Object.keys(ct).forEach(k => { if (!(states[k] >= ct[k])) { states[k] = ct[k]; changed = true; } });
+      return changed ? { sports, states } : prev;
+    };
+    const titleCase = (t) => t.toLowerCase().replace(/(^|[\s.\-(])([a-z])/g, (m, a, b) => a + b.toUpperCase());
+    const docsToGames = (snap) => snap.docs
+      .filter(d => !HIDE_LEGACY_DOCS || d.data().schemaVersion)
+      .map(d => normalizeGame(d.id, d.data()));
+
+    function useGames(sport, stateF, today, search) {
+      const demo = useMemo(() => DEMO_MODE ? DEMO_ALL.map(g => normalizeGame(g.id, g)) : [], []);
+      const [lib, setLib] = useState(null);
+      const [status, setStatus] = useState(DEMO_MODE ? "demo" : "connecting");
+      const [feed, setFeed] = useState(demo);
+      const [more, setMore] = useState(false);
+      const [topPool, setTopPool] = useState([]);
+      const [topReady, setTopReady] = useState(DEMO_MODE);
+      const [searchDocs, setSearchDocs] = useState([]);
+      const [total, setTotal] = useState(null);
+      const [totalAll, setTotalAll] = useState(null);
+      const [catalog, setCatalog] = useState(() => mergeCatalog({ sports: {}, states: {} }, demo));
+      const [noIndex, setNoIndex] = useState({});
+      const [lim, setLim] = useState({ key: "", n: FEED_PAGE });
+
+      const key = sport + "|" + stateF;
+      const keyRef = React.useRef(key); keyRef.current = key;
+      // Filter efektif per query: bila index-nya belum ada → ALL (difilter di klien)
+      const eff = (kind) => noIndex[key + "|" + kind] ? ["ALL", "ALL"] : [sport, stateF];
+      const [fS, fT] = eff("feed"), [tS, tT] = eff("top"), [cS, cT] = eff("count");
+      const feedN = lim.key === key ? lim.n : FEED_PAGE;
+      const loadMore = () => setLim({ key, n: Math.min(FEED_MAX, feedN + FEED_PAGE) });
+
+      const fail = (kind) => (err) => {
+        if (err && err.code === "failed-precondition" && /index/i.test(String(err.message))) {
+          console.warn("[Varsity Bowl] Query '" + kind + "' butuh composite index Firestore — sementara filter dikerjakan di sisi klien. Buat index lewat link ini:\n" + err.message);
+          const k = keyRef.current + "|" + kind;
+          setNoIndex(p => (p[k] ? p : { ...p, [k]: true }));
+        } else {
+          console.error("[Varsity Bowl] Firestore error (" + kind + "):", err);
+          if (kind === "feed") setStatus("error");
+        }
+      };
+      const col = (L) => L.collection(L.db, "schedules_all");
+      const filt = (L, s, t) => [].concat(
+        s !== "ALL" ? [L.where("sport", "==", s)] : [],
+        t !== "ALL" ? [L.where("state", "==", t)] : []);
+
+      // 0) init Firebase
+      useEffect(() => {
+        if (DEMO_MODE) return;
+        let cancelled = false;
+        (async () => {
+          try {
+            const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js");
+            const m = await import("https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js");
+            if (cancelled) return;
+            const db = m.getFirestore(initializeApp(FIREBASE_CONFIG));
+            const L = { db, collection: m.collection, query: m.query, where: m.where, orderBy: m.orderBy, limit: m.limit,
+                        onSnapshot: m.onSnapshot, getDocs: m.getDocs, doc: m.doc, getDoc: m.getDoc, getCountFromServer: m.getCountFromServer };
+            fsReadyResolve(L);        // dipakai fetchLogo
+            setLib(L);
+          } catch (e) {
+            console.error("[Varsity Bowl] Firebase init error:", e);
+            setStatus("error");
+          }
+        })();
+        return () => { cancelled = true; };
+      }, []);
+
+      // 1) feed: jadwal kronologis (rawDate window) + filter server
+      useEffect(() => {
+        if (!lib) return;
+        const q = lib.query(col(lib),
+          lib.where("rawDate", ">=", today), lib.where("rawDate", "<=", dayPlus(today, WINDOW_DAYS)),
+          ...filt(lib, fS, fT), lib.orderBy("rawDate"), lib.limit(feedN));
+        const unsub = lib.onSnapshot(q, (snap) => {
+          const games = docsToGames(snap);
+          setFeed(games);
+          setMore(snap.size >= feedN && feedN < FEED_MAX);
+          setStatus("live");
+          setCatalog(p => mergeCatalog(p, games));
+          console.log("[Varsity Bowl] feed: " + snap.size + " dokumen (limit " + feedN + ").");
+        }, fail("feed"));
+        return () => unsub();
+      }, [lib, today, fS, fT, feedN]);
+
+      // 2) kandidat Top 10: prestige tertinggi (window tanggal dipotong di klien)
+      useEffect(() => {
+        if (!lib) return;
+        const q = lib.query(col(lib), ...filt(lib, tS, tT), lib.orderBy("prestige", "desc"), lib.limit(TOP_POOL));
+        const unsub = lib.onSnapshot(q, (snap) => {
+          setTopPool(docsToGames(snap)); setTopReady(true);
+        }, fail("top"));
+        return () => unsub();
+      }, [lib, tS, tT]);
+
+      // 3) jumlah total (murah: ±1 read per 1000 dokumen)
+      useEffect(() => {
+        if (!lib || !lib.getCountFromServer) return;
+        let alive = true;
+        const end = dayPlus(today, WINDOW_DAYS);
+        const base = (s, t) => lib.query(col(lib), lib.where("rawDate", ">=", today), lib.where("rawDate", "<=", end), ...filt(lib, s, t));
+        const unfiltered = cS === "ALL" && cT === "ALL";
+        const run = () => {
+          lib.getCountFromServer(base("ALL", "ALL"))
+            .then(r => { if (!alive) return; const n = r.data().count; setTotalAll(n); if (unfiltered) setTotal(n); })
+            .catch(() => {});
+          if (!unfiltered) {
+            lib.getCountFromServer(base(cS, cT))
+              .then(r => { if (alive) setTotal(r.data().count); })
+              .catch(err => { if (alive) { setTotal(null); fail("count")(err); } });
+          }
+        };
+        if (!unfiltered) setTotal(null);
+        run();
+        const t = setInterval(run, 10 * 60e3);
+        return () => { alive = false; clearInterval(t); };
+      }, [lib, today, cS, cT]);
+
+      // 4) pencarian nama tim di server (awalan nama, tak peduli huruf besar/kecil) — selain filter sisi klien
+      useEffect(() => {
+        const raw = search.trim();
+        if (!lib || raw.length < 3) { setSearchDocs(p => (p.length ? [] : p)); return; }
+        let alive = true;
+        const t = setTimeout(() => {
+          const jobs = [];
+          Array.from(new Set([raw, titleCase(raw)])).forEach(v => ["home", "away"].forEach(f => {
+            jobs.push(lib.getDocs(lib.query(col(lib), lib.where(f, ">=", v), lib.where(f, "<=", v + "\uf8ff"), lib.limit(SEARCH_LIMIT))).catch(() => null));
+          }));
+          Promise.all(jobs).then(snaps => {
+            if (!alive) return;
+            const lists = snaps.filter(Boolean).map(docsToGames);
+            setSearchDocs(mergeUnique(...lists));
+          });
+        }, 500);
+        return () => { alive = false; clearTimeout(t); };
+      }, [lib, search]);
+
+      const filtersOn = sport !== "ALL" || stateF !== "ALL";
+      const totalOut = filtersOn ? (noIndex[key + "|count"] ? null : total) : totalAll;
+      return { feed, topPool, topReady, searchDocs, total: totalOut, totalAll, hasMore: !DEMO_MODE && more, loadMore, catalog, status };
+    }
+
+    class ErrorBoundary extends React.Component {
+      constructor(p) { super(p); this.state = { err: null }; }
+      static getDerivedStateFromError(err) { return { err }; }
+      componentDidCatch(err) { console.error("[Varsity Bowl] render error:", err); }
+      render() {
+        return this.state.err
+          ? <div className="min-h-screen flex items-center justify-center text-gray-600 p-10 text-center">Something went wrong. Please refresh the page.</div>
+          : this.props.children;
+      }
+    }
+
+    // ============================================================
+    // APP
+    // ============================================================
+    function App() {
+      const [sport, setSport] = useState("ALL");
+      const [rankSport, setRankSport] = useState("FOOTBALL");
+      const [stateFilter, setStateFilter] = useState("ALL");
+      const [liveOnly, setLiveOnly] = useState(false);
+      const [search, setSearch] = useState("");
+      const [visible, setVisible] = useState(PAGE_SIZE);
+      const [today, setToday] = useState(pacificDay(0));
+      const [nowMs, setNowMs] = useState(Date.now());
+      const { feed, topPool, topReady, searchDocs, total, totalAll, hasMore, loadMore, catalog, status } =
+        useGames(sport, stateFilter, today, search);
+
+      useEffect(() => {
+        const t = setInterval(() => setToday(pacificDay(0)), 10 * 60 * 1000);
+        return () => clearInterval(t);
+      }, []);
+      useEffect(() => {
+        const t = setInterval(() => setNowMs(Date.now()), 60 * 1000);
+        return () => clearInterval(t);
+      }, []);
+      useEffect(() => { setVisible(PAGE_SIZE); }, [sport, stateFilter, search, liveOnly]);
+
+      const scrollToSchedule = () => {
+        const el = document.getElementById("schedule");
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+      // Mulai mengetik → lompat ke hasil (kolom search ada di header sticky, jadi tetap terlihat)
+      const scrolledForQuery = React.useRef(false);
+      useEffect(() => {
+        if (!search.trim()) { scrolledForQuery.current = false; return; }
+        if (scrolledForQuery.current) return;
+        const t = setTimeout(() => { scrolledForQuery.current = true; scrollToSchedule(); }, 450);
+        return () => clearTimeout(t);
+      }, [search]);
+
+      // Window tanggal (sama dengan query server): hari ini s/d WINDOW_DAYS ke depan
+      const endDay = useMemo(() => dayPlus(today, WINDOW_DAYS), [today]);
+      const inWin = (g) => DEMO_MODE || !g.rawDate || (g.rawDate >= today && g.rawDate <= endDay);
+
+      const qTokens = useMemo(() => norm(search).split(" ").filter(t => t && t !== "vs" && t !== "v"), [search]);
+      const searching = qTokens.length > 0;
+
+      const feedUp = useMemo(() => feed.filter(inWin), [feed, today, endDay]);
+      const listUp = useMemo(() => (searching && searchDocs.length)
+        ? mergeUnique(feedUp, searchDocs.filter(inWin)) : feedUp, [feedUp, searchDocs, searching, today, endDay]);
+      const poolUp = useMemo(() => mergeUnique(listUp, topPool.filter(inWin)), [listUp, topPool, today, endDay]);
+
+      // Pil olahraga: yang sedang ada gamenya dulu (urut kemunculan), lalu daftar dasar (mis. di luar musim)
+      const sportList = useMemo(() => {
+        const seen = Object.keys(catalog.sports).sort((a, b) => catalog.sports[b] - catalog.sports[a] || a.localeCompare(b));
+        return [...seen, ...SPORT_BASE.filter(s => !catalog.sports[s])];
+      }, [catalog]);
+      const pills = useMemo(() => ["ALL", ...sportList, ...(sport !== "ALL" && !sportList.includes(sport) ? [sport] : [])], [sportList, sport]);
+
+      // Semua negara bagian selalu tersedia (data diambil per filter di server, bukan dari sampel yang dimuat)
+      const stateOptions = useMemo(() => Object.keys(STATE_NAMES)
+        .map(code => ({ code, name: STATE_NAMES[code] })).sort((a, b) => a.name.localeCompare(b.name)), []);
+      const quickStates = useMemo(() => Object.keys(catalog.states)
+        .sort((a, b) => catalog.states[b] - catalog.states[a] || a.localeCompare(b)).slice(0, 6)
+        .map(code => ({ code, name: STATE_NAMES[code] })), [catalog]);
+
+      const hayOf = (g) => norm([g.home, g.away, g.homeFull, g.awayFull, g.location, g.league,
+                                 g.sport, g.gender, g.gameType, g.state, STATE_NAMES[g.state]].join(" "));
+      const listIndex = useMemo(() => listUp.map(g => ({ g, hay: hayOf(g) })), [listUp]);
+      const poolIndex = useMemo(() => poolUp.map(g => ({ g, hay: hayOf(g) })), [poolUp]);
+
+      const liveClock = liveOnly ? nowMs : 0;   // jam hanya memicu hitung ulang saat filter LIVE aktif
+      const passes = ({ g, hay }) =>
+        (sport === "ALL" || g.sport === sport) &&
+        (stateFilter === "ALL" || g.state === stateFilter) &&
+        (!liveOnly || gameState(g, nowMs) === "live") &&
+        qTokens.every(t => hay.includes(t));
+      const filtered = useMemo(() => listIndex.filter(passes).map(x => x.g),
+        [listIndex, sport, stateFilter, qTokens, liveOnly, liveClock]);
+
+      // Top 10 diambil dari kandidat prestige tertinggi (bukan hanya halaman jadwal yang termuat)
+      const topGames = useMemo(() => poolIndex.filter(passes).map(x => x.g).sort(byPrestige).slice(0, 10),
+        [poolIndex, sport, stateFilter, qTokens, liveOnly, liveClock]);
+      const schedule = useMemo(() => [...filtered].sort(byDate), [filtered]);
+      const shown = schedule.slice(0, visible);
+
+      const clientOnly = searching || liveOnly;          // filter yang tidak bisa dihitung server
+      const partial = hasMore;                           // masih ada halaman yang belum dimuat → angka lokal = minimal
+      const gamesN = (!clientOnly && total != null) ? total : filtered.length;
+      const gamesPlus = !(!clientOnly && total != null) && partial;
+
+      // Kartu hero mengikuti filter yang aktif (sport / state / pencarian)
+      const stats = useMemo(() => {
+        const teams = new Set(), sports = new Set();
+        filtered.forEach(g => {
+          teams.add(g.homeFull || g.home); teams.add(g.awayFull || g.away);
+          if (g.sport) sports.add(g.sport);
+        });
+        return { sports: sports.size, teams: teams.size, games: filtered.length };
+      }, [filtered]);
+
+      // Game yang sedang LIVE — definisi sama dengan badge "● LIVE" di baris jadwal (30 menit sebelum kickoff s/d 3 jam sesudahnya)
+      const liveBySport = useMemo(() => {
+        const c = {};
+        feedUp.forEach(g => { if (g.sport && gameState(g, nowMs) === "live") c[g.sport] = (c[g.sport] || 0) + 1; });
+        return c;
+      }, [feedUp, nowMs]);
+      const liveTotal = useMemo(() => Object.values(liveBySport).reduce((a, b) => a + b, 0), [liveBySport]);
+      // Angka kartu "Sports Live" mengikuti filter yang aktif
+      const liveView = useMemo(() => {
+        const sports = new Set(); let games = 0, next = null;
+        filtered.forEach(g => {
+          const st = gameState(g, nowMs);
+          if (st === "live") { games++; if (g.sport) sports.add(g.sport); }
+          else if (st === "upcoming") { const t = gameStartMs(g); if (t != null && (next == null || t < next.t)) next = { t, g }; }
+        });
+        return { sports: sports.size, games, nextLabel: next ? startLabel(next.g, nowMs).toLowerCase() : "" };
+      }, [filtered, nowMs]);
+      const [showSports, setShowSports] = useState(false);
+      const focusSearch = () => {
+        const el = Array.from(document.querySelectorAll('input[aria-label="Search games"]')).find(i => i.offsetParent !== null);
+        if (el) el.focus();
+      };
+
+      // SHOW MORE: tampilkan lebih banyak; bila yang termuat hampir habis, ambil halaman berikutnya dari Firestore
+      const remaining = schedule.length - visible;
+      const onMore = () => {
+        setVisible(v => v + PAGE_SIZE);
+        if (hasMore && remaining <= PAGE_SIZE * 2) loadMore();
+      };
+      const moreLabel = (!clientOnly && total != null)
+        ? `SHOW MORE (${Math.max(total - visible, 0)} REMAINING)`
+        : (hasMore ? "SHOW MORE" : `SHOW MORE (${remaining} REMAINING)`);
+
+      const hasFilters = search.trim() !== "" || sport !== "ALL" || stateFilter !== "ALL" || liveOnly;
+      const resetFilters = () => { setSearch(""); setSport("ALL"); setStateFilter("ALL"); setLiveOnly(false); };
+
+      const upcomingN = totalAll != null ? totalAll : feedUp.length;
+      const upcomingPlus = totalAll == null && hasMore;
+      const badgeKey = status === "live" ? "live" : status;
+      const badgeText =
+        status === "live"       ? (upcomingN > 0 ? `LIVE • ${fmtN(upcomingN, upcomingPlus)} UPCOMING GAMES` : "NO UPCOMING GAMES RIGHT NOW")
+        : status === "error"    ? "CAN'T LOAD GAMES • TRY AGAIN SOON"
+        : status === "demo"     ? "DEMO MODE • SAMPLE DATA"
+        : "CONNECTING…";
+      const emptyMsg =
+        status === "connecting" ? "Loading games…"
+        : status === "error"    ? "We couldn't load games right now. Please try again in a minute."
+        : liveOnly ? "No games are live right now. Try CLEAR ALL above."
+        : hasFilters ? "No games match your search or filters. Try CLEAR ALL above." : "No upcoming games right now.";
+      const topEmptyMsg = (!topReady && status !== "error" && status !== "demo") ? "Loading games…" : emptyMsg;
+      const num = (n) => status === "connecting" ? "…" : n;
+
+      const goSport = (s) => (e) => {
+        e.preventDefault(); setSport(s);
+        const el = document.getElementById("schedule"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+
+      return (
+        <div className="min-h-screen bg-[#f5f5f5] text-zinc-900">
+          <div className="h-1 w-full bg-[#f97316]" />
+          <header className="sticky top-0 z-50 bg-white border-b border-gray-200">
+            <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+              <div className="flex h-16 items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-9 w-9 shrink-0 rounded-full bg-[#f97316] flex items-center justify-center font-black text-white text-[15px]">VB</div>
+                  <div className="leading-none min-w-0">
+                    <div className="font-black text-[16px] sm:text-[18px] tracking-tight whitespace-nowrap">VARSITY BOWL</div>
+                    <div className="hidden sm:block text-[10px] font-bold tracking-[0.18em] text-gray-600 -mt-px whitespace-nowrap">THE HUB FOR HIGH SCHOOL SPORTS</div>
+                  </div>
+                </div>
+                <nav className="hidden xl:flex items-center gap-5 text-[13px] font-semibold">
+                  {["Football","Basketball","Baseball","Soccer","Volleyball","Wrestling"].map(s => (
+                    <a key={s} href="#schedule" onClick={goSport(s.toUpperCase())} className="text-zinc-700 hover:text-[#f97316] transition-colors">{s}</a>
+                  ))}
+                  <a href="#rankings" className="text-zinc-700 hover:text-[#f97316] transition-colors">Rankings</a>
+                  <a href="#trending" className="text-zinc-700 hover:text-[#f97316] transition-colors">Teams</a>
+                  <a href="/shop/" className="text-[#f97316] hover:text-orange-300 font-bold transition-colors">Shop</a>
+                  <SearchBox value={search} onChange={setSearch} onSubmit={scrollToSchedule} placeholder="Search teams, sports, states..." wrapCls="" inputCls="text-sm w-[240px]"/>
+                </nav>
+                <div className="flex xl:hidden items-center flex-1 min-w-0 justify-end">
+                  <SearchBox value={search} onChange={setSearch} onSubmit={scrollToSchedule} placeholder="Search teams, sports..." wrapCls="w-full max-w-[260px]" inputCls="text-[16px] sm:text-sm w-full min-w-0"/>
+                  <a href="/shop/" className="hidden sm:inline-flex xl:hidden ml-2 shrink-0 items-center rounded-full bg-[#f97316] px-3.5 py-2 text-[12px] font-black tracking-widest text-white hover:bg-orange-400 transition-colors">SHOP</a>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          <section className="relative border-b border-gray-200">
+            <div className="absolute inset-0 bg-gradient-to-b from-orange-50 via-white to-white"/>
+            <div className="relative mx-auto max-w-[1440px] px-4 lg:px-6 py-10 lg:py-14">
+              <div className="max-w-4xl">
+                <div className={`inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] font-bold tracking-widest mb-4 ${BADGE[badgeKey] || BADGE.connecting}`}>
+                  <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse"/>
+                  {badgeText}
+                </div>
+                <h1 className="text-[40px] lg:text-[64px] font-black leading-[0.9] tracking-tight">
+                  THE HUB FOR <br className="hidden lg:block"/>
+                  <span className="text-[#f97316]">HIGH SCHOOL</span> SPORTS
+                </h1>
+                <p className="mt-4 text-[16px] lg:text-[18px] leading-relaxed text-gray-600 max-w-2xl">
+                  Comprehensive coverage of Football, Basketball, Volleyball, Soccer, Baseball and more — all sports, one hub.
+                </p>
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-3xl">
+                  {[
+                    {key:"sports", I:IcActivity, label:`${num(liveView.sports)} ${liveView.sports === 1 ? "Sport" : "Sports"} Live`,
+                     sub: liveView.games > 0
+                            ? `${liveView.games} ${liveView.games === 1 ? "game" : "games"} live now • tap for sports`
+                            : (liveView.nextLabel ? `No live games • next ${liveView.nextLabel}` : "No live games right now"),
+                     live: liveView.games > 0,
+                     onClick: () => setShowSports(v => !v), expanded: showSports, hint: "Show all sports"},
+                    {key:"teams", I:IcUsers, label:`${num(fmtN(stats.teams, partial))} ${stats.teams === 1 ? "Team" : "Teams"} Playing`,
+                     sub: hasFilters ? "Matching your filters" : "Tap to search a team",
+                     onClick: focusSearch, hint: "Search teams"},
+                    {key:"games", I:IcTrophy, label:`${num(fmtN(gamesN, gamesPlus))} Upcoming ${gamesN === 1 ? "Game" : "Games"}`,
+                     sub: hasFilters ? "Matching your filters" : `Next ${WINDOW_DAYS} days • tap to view schedule`,
+                     onClick: scrollToSchedule, hint: "Jump to the full schedule"}
+                  ].map(({key,I,label,sub,live,onClick,expanded,hint}) => (
+                    <button key={key} type="button" onClick={onClick} aria-label={hint}
+                      aria-expanded={expanded === undefined ? undefined : expanded}
+                      className={`text-left rounded-xl bg-white border p-4 flex items-center gap-3 cursor-pointer transition-colors hover:bg-orange-50 active:scale-[0.99] ${live ? "border-red-500/50 hover:border-red-400" : "border-gray-200 hover:border-[#f97316]/60"}`}>
+                      <div className="h-10 w-10 rounded-lg bg-gray-100 border border-gray-300 flex items-center justify-center shrink-0">
+                        <I c={"h-5 w-5 " + (live ? "text-red-600" : "text-[#f97316]")}/>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-sm leading-tight">{live && <span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-red-500 align-middle animate-pulse"/>}{label}</div>
+                        <div className="text-[12px] text-gray-600">{sub}</div>
+                      </div>
+                      {expanded !== undefined && <IcChevron c={"h-4 w-4 shrink-0 text-gray-600 transition-transform " + (expanded ? "rotate-180" : "")}/>}
+                    </button>
+                  ))}
+                </div>
+                {showSports && (
+                  <div className="mt-3 max-w-3xl rounded-xl bg-white border border-gray-200 shadow-sm p-3 flex flex-wrap gap-2">
+                    {(liveTotal > 0 || liveOnly) && (
+                      <button type="button" onClick={() => { setLiveOnly(v => !v); setShowSports(false); scrollToSchedule(); }}
+                        className={`rounded-full px-3 py-1.5 text-[12px] font-bold tracking-widest border transition-colors ${
+                          liveOnly ? "bg-red-500 border-red-500 text-white" : "bg-white border-red-500/50 text-red-600 hover:border-red-400"}`}>
+                        ● LIVE NOW <span className="opacity-80">{liveTotal}</span>
+                      </button>
+                    )}
+                    <button type="button" onClick={() => { setSport("ALL"); setShowSports(false); scrollToSchedule(); }}
+                      className={`rounded-full px-3 py-1.5 text-[12px] font-bold tracking-widest border transition-colors ${
+                        sport === "ALL" ? "bg-[#f97316] border-[#f97316] text-white" : "bg-white border-gray-200 text-zinc-700 hover:border-orange-300"}`}>
+                      ALL SPORTS{upcomingN > 0 && <span className="ml-1.5 opacity-70">{fmtN(upcomingN, upcomingPlus)}</span>}
+                    </button>
+                    {sportList.map(sp => (
+                      <button key={sp} type="button" onClick={() => { setSport(sp); setShowSports(false); scrollToSchedule(); }}
+                        className={`rounded-full px-3 py-1.5 text-[12px] font-bold tracking-widest border transition-colors ${
+                          sport === sp ? "bg-[#f97316] border-[#f97316] text-white" : "bg-white border-gray-200 text-zinc-700 hover:border-orange-300"}`}>
+                        {sportLabel(sp)}{liveBySport[sp] > 0 && <span className="ml-1.5 text-red-600">● {liveBySport[sp]}</span>}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </section>
+
+          <div className="sticky top-16 z-40 bg-white/95 backdrop-blur border-b border-gray-200 shadow-sm">
+            <div className="mx-auto max-w-[1440px] px-4 lg:px-6">
+              <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-none">
+                {(liveTotal > 0 || liveOnly) && (
+                  <button type="button" onClick={() => setLiveOnly(v => !v)} aria-pressed={liveOnly}
+                    className={`shrink-0 rounded-full px-4 py-2 text-[12px] font-bold tracking-widest border transition-all ${
+                      liveOnly ? "bg-red-500 border-red-500 text-white" : "bg-white border-red-500/50 text-red-600 hover:border-red-400"}`}>
+                    ● LIVE {liveTotal}
+                  </button>
+                )}
+                {pills.map(s => (
+                  <button key={s} onClick={() => setSport(s)}
+                    className={`shrink-0 rounded-full px-4 py-2 text-[12px] font-bold tracking-widest border transition-all ${
+                      sport === s ? "bg-[#f97316] border-[#f97316] text-white"
+                                  : "bg-white border-gray-200 text-gray-600 hover:text-zinc-800 hover:border-gray-300"
+                    }`}>
+                    {sportLabel(s)}
+                  </button>
+                ))}
+                <div className="ml-auto flex shrink-0 items-center gap-3 pl-2">
+                  <div className="hidden lg:flex items-center gap-2 text-[11px] text-gray-500 font-medium">
+                    <IcClock c="h-3.5 w-3.5"/> {schedule.length} games
+                  </div>
+                  <div className="relative">
+                    <select aria-label="Filter by state" value={stateFilter} onChange={e => setStateFilter(e.target.value)}
+                      className="appearance-none rounded-full bg-white border border-gray-200 pl-3 pr-8 py-2 text-[12px] font-bold tracking-widest text-zinc-700 focus:outline-none focus:border-gray-300">
+                      <option value="ALL">ALL STATES</option>
+                      {stateOptions.map(o => <option key={o.code} value={o.code}>{o.name.toUpperCase()}</option>)}
+                    </select>
+                    <IcChevron c="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500"/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <main className="mx-auto max-w-[1440px] px-4 lg:px-6 py-6 lg:py-8">
+            <div className="grid grid-cols-12 gap-6">
+              <div className="col-span-12 lg:col-span-8 xl:col-span-9 space-y-8">
+                {/* ===== TOP 10 ===== */}
+                <section>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-[20px] lg:text-[24px] font-black tracking-tight flex items-center gap-2">
+                        <IcFlame c="h-5 w-5 text-[#f97316]"/> Top 10 Most Prestigious Games
+                      </h2>
+                      <span className="hidden sm:inline-flex rounded-full bg-[#f97316] text-white text-[10px] font-black tracking-widest px-2.5 py-1">
+                        {sport === "ALL" ? "MIXED SPORTS" : sportLabel(sport)}
+                      </span>
+                    </div>
+                    <div className="text-[12px] text-gray-500 hidden md:block">
+                      {status === "demo" ? "Demo data — sample games" : `Next ${WINDOW_DAYS} days`}
+                    </div>
+                  </div>
+                  {topGames.length === 0 ? (
+                    <div className="rounded-2xl bg-white border border-gray-200 shadow-sm px-5 py-10 text-center text-gray-500">{topEmptyMsg}</div>
+                  ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {topGames.map((g, i) => {
+                      const state = gameState(g, nowMs);
+                      return (
+                        <a key={g.id} href={watchHref(g)}
+                           className="group relative rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden hover:border-orange-300 transition-colors block">
+                          <div className="absolute top-0 left-0 h-full w-[3px] bg-[#f97316]"/>
+                          <div className="p-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div className="h-7 w-7 rounded-full bg-gray-100 border border-gray-200 flex items-center justify-center text-[11px] font-black">#{i+1}</div>
+                                <span className={`text-[10px] font-black tracking-widest px-2 py-1 rounded-full border ${sportBadgeClass(g.sport)}`}>{sportTitle(g)}</span>
+                                <span className="text-[11px] text-gray-500 flex items-center gap-1"><IcClock c="h-3 w-3"/>{fmtDate(g)} • {fmtTime(g)}</span>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <IcStar c="h-3.5 w-3.5 text-[#f97316]"/>
+                                <span className="text-[12px] font-bold">{g.prestige}</span>
+                              </div>
+                            </div>
+                            <div className="mt-3 flex items-center gap-3">
+                              <div className="flex -space-x-2">
+                                <TeamLogo src={g.awayLogo} name={g.away} cls="h-10 w-10 rounded-full border-2 border-white" fallbackCls="bg-gray-100"/>
+                                <TeamLogo src={g.homeLogo} name={g.home} cls="h-10 w-10 rounded-full border-2 border-white" fallbackCls="bg-[#f97316] text-white"/>
+                              </div>
+                              <div className="min-w-0">
+                                <div className="font-bold text-[14px] leading-tight truncate">{matchup(g)}</div>
+                                <div className="text-[12px] text-gray-500 flex items-center gap-1">
+                                  <IcMap c="h-3 w-3"/>{[whereText(g), g.league].filter(Boolean).join(" • ") || "Location TBA"}
+                                </div>
+                              </div>
+                            </div>
+                            <p className="mt-3 text-[13px] leading-snug text-gray-600 line-clamp-2">{g.description}</p>
+                            <div className="mt-4 flex items-center justify-between gap-3">
+                              <span className="text-[11px] font-bold tracking-widest text-gray-500">{[g.gameType.toUpperCase(), g.state].filter(Boolean).join(" • ")}</span>
+                              <span className={`inline-flex items-center gap-1.5 rounded-full text-[11px] font-black tracking-widest px-3 py-1.5 transition-colors ${
+                                state === "live"
+                                  ? "bg-red-500 text-white animate-pulse"
+                                  : "bg-[#f97316] text-white group-hover:bg-orange-500"
+                              }`}>
+                                <IcPlay c={`h-3 w-3 fill-current`}/>
+                                {state === "live" ? "WATCH LIVE" : (startLabel(g, nowMs) === "FINAL" ? "VIEW" : `WATCH · ${startLabel(g, nowMs)}`)}
+                              </span>
+                            </div>
+                          </div>
+                        </a>
+                      );
+                    })}
+                  </div>
+                  )}
+                </section>
+
+                {/* ===== FULL SCHEDULE ===== */}
+                <section id="schedule" className="rounded-2xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+                  <div className="flex items-center justify-between px-4 lg:px-5 py-4 border-b border-gray-200">
+                    <h3 className="font-black text-[16px] tracking-tight">Full Schedule • {sport === "ALL" ? "All Sports" : sportLabel(sport)}</h3>
+                    <div className="hidden md:flex items-center gap-2 text-[11px] text-gray-500">
+                      <span className={`h-2 w-2 rounded-full ${status === "live" ? "bg-emerald-500" : status === "error" ? "bg-red-500" : "bg-yellow-500"}`}/>
+                      {status === "live" ? "Live updates" : status === "demo" ? "Demo data" : status === "error" ? "Offline" : "Connecting"}
+                    </div>
+                  </div>
+
+                  {hasFilters && (
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 lg:px-5 py-3 border-b border-gray-200 bg-gray-50 text-[12px] text-gray-600">
+                      <span>
+                        <b className="text-zinc-900">{schedule.length}</b> {schedule.length === 1 ? "game" : "games"}
+                        {search.trim() !== "" && <> for “<span className="text-zinc-900">{search.trim()}</span>”</>}
+                        {sport !== "ALL" && <> • {sportLabel(sport)}</>}
+                        {stateFilter !== "ALL" && <> • {STATE_NAMES[stateFilter] || stateFilter}</>}
+                        {liveOnly && <> • LIVE NOW</>}
+                      </span>
+                      <button type="button" onClick={resetFilters}
+                        className="rounded-full border border-gray-300 px-3 py-1 text-[11px] font-black tracking-widest text-zinc-800 hover:bg-gray-100 transition-colors">CLEAR ALL</button>
+                    </div>
+                  )}
+
+                  {/* Desktop table */}
+                  <div className="hidden lg:block overflow-x-auto">
+                    <table className="w-full text-left text-[13px]">
+                      <thead className="bg-gray-50 text-[11px] font-black tracking-widest text-gray-500 border-b border-gray-200">
+                        <tr>
+                          <th className="px-5 py-3">SPORT</th><th className="px-5 py-3">DATE & TIME</th><th className="px-5 py-3">MATCHUP</th>
+                          <th className="px-5 py-3">LOCATION</th><th className="px-5 py-3">GAME TYPE</th><th className="px-5 py-3">WATCH</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200">
+                        {shown.map(g => {
+                          const state = gameState(g, nowMs);
+                          const label = startLabel(g, nowMs);
+                          return (
+                            <tr key={g.id} className="hover:bg-orange-50/60 transition-colors">
+                              <td className="px-5 py-3.5"><span className="inline-flex rounded-full bg-gray-100 border border-gray-300 px-2.5 py-1 text-[10px] font-black tracking-widest">{sportTitle(g)}</span></td>
+                              <td className="px-5 py-3.5 text-zinc-700 whitespace-nowrap">{fmtDate(g)} <span className="text-gray-500">• {fmtTime(g)}</span></td>
+                              <td className="px-5 py-3.5">
+                                <a href={watchHref(g)} className="font-bold leading-tight hover:text-[#f97316] transition-colors block">{matchup(g)}</a>
+                                <div className="text-[11px] text-gray-500">{g.league}</div>
+                              </td>
+                              <td className="px-5 py-3.5 text-gray-600"><span className="inline-flex items-center gap-1"><IcMap c="h-3 w-3"/>{whereText(g) || "TBA"}</span></td>
+                              <td className="px-5 py-3.5"><span className="text-[11px] font-bold tracking-widest text-gray-600">{g.gameType.toUpperCase()}</span></td>
+                              <td className="px-5 py-3.5">
+                                <a href={watchHref(g)}
+                                   className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-[11px] font-black transition-colors ${
+                                     state === "live" ? "bg-red-500 text-white animate-pulse"
+                                     : "bg-[#f97316] text-white hover:bg-orange-500"
+                                   }`}>
+                                  {state === "live" ? "● LIVE" : (label === "FINAL" ? "VIEW" : `WATCH · ${label}`)}
+                                </a>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {shown.length === 0 && (
+                          <tr><td colSpan="6" className="px-5 py-10 text-center text-gray-500">{emptyMsg}</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile cards */}
+                  <div className="lg:hidden divide-y divide-gray-200">
+                    {shown.map(g => {
+                      const state = gameState(g, nowMs);
+                      const label = startLabel(g, nowMs);
+                      return (
+                        <a key={g.id} href={watchHref(g)} className="p-4 flex flex-col gap-2 hover:bg-orange-50/60 transition-colors">
+                          <div className="flex items-center justify-between">
+                            <span className="rounded-full bg-gray-100 border border-gray-300 px-2.5 py-1 text-[10px] font-black tracking-widest">{sportTitle(g)}</span>
+                            <span className="text-[11px] text-gray-500">{fmtDate(g)} • {fmtTime(g)}</span>
+                          </div>
+                          <div className="font-bold text-[14px]">{matchup(g)}</div>
+                          <div className="text-[12px] text-gray-500 flex items-center gap-1"><IcMap c="h-3 w-3"/>{[whereText(g), g.gameType].filter(Boolean).join(" • ") || "Location TBA"}</div>
+                          <div className="mt-1">
+                            <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-[11px] font-black ${
+                              state === "live" ? "bg-red-500 text-white animate-pulse" : "bg-[#f97316] text-white"
+                            }`}>
+                              <IcPlay c="h-3 w-3 fill-current"/>
+                              {state === "live" ? "WATCH LIVE" : (label === "FINAL" ? "VIEW" : `WATCH · ${label}`)}
+                            </span>
+                          </div>
+                        </a>
+                      );
+                    })}
+                    {shown.length === 0 && <div className="px-5 py-10 text-center text-gray-500">{emptyMsg}</div>}
+                  </div>
+
+                  {(remaining > 0 || hasMore) && (
+                    <div className="border-t border-gray-200 p-4 text-center">
+                      <button onClick={onMore}
+                        className="rounded-full bg-gray-100 border border-gray-300 px-5 py-2 text-[11px] font-black tracking-widest hover:bg-gray-200 transition-colors">
+                        {moreLabel}
+                      </button>
+                    </div>
+                  )}
+                </section>
+              </div>
+
+              {/* ===== SIDEBAR ===== */}
+              <aside className="col-span-12 lg:col-span-4 xl:col-span-3 space-y-6">
+                <div id="rankings" className="rounded-2xl bg-white border border-gray-200 shadow-sm p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-black text-[13px] tracking-widest flex items-center gap-2"><IcTrophy c="h-4 w-4 text-[#f97316]"/> TOP 10 RANKINGS</h4>
+                    <span className="text-[10px] text-gray-500 font-bold tracking-widest">NATIONAL</span>
+                  </div>
+                  <div className="relative mb-4">
+                    <select aria-label="Ranking sport" value={rankSport} onChange={e => setRankSport(e.target.value)} className="w-full appearance-none rounded-full bg-gray-50 border border-gray-300 px-3 py-2 text-[12px] font-bold tracking-widest focus:outline-none focus:border-gray-300">
+                      {Object.keys(RANKINGS).map(s => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                    <IcChevron c="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500"/>
+                  </div>
+                  <div className="space-y-2">
+                    {RANKINGS[rankSport].map((team, i) => (
+                      <div key={i} className="flex items-center gap-3 rounded-xl bg-gray-50 border border-gray-200 px-3 py-2.5 hover:border-orange-300 transition-colors">
+                        <div className={`h-6 w-6 rounded-full flex items-center justify-center text-[11px] font-black ${i < 3 ? "bg-[#f97316] text-white" : "bg-gray-100 text-zinc-700"}`}>{i+1}</div>
+                        <div className="text-[13px] font-semibold leading-tight flex-1">{team.replace(/^\d+\.\s*/, "")}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div id="trending" className="rounded-2xl bg-white border border-gray-200 shadow-sm p-4">
+                  <h4 className="font-black text-[13px] tracking-widest mb-3 flex items-center gap-2"><IcFlame c="h-4 w-4 text-[#f97316]"/> TRENDING TEAMS</h4>
+                  <div className="space-y-2">
+                    {TRENDING.map(t => (
+                      <div key={t.name} className="flex items-center justify-between rounded-xl bg-gray-50 border border-gray-200 px-3 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-[10px] font-black">{initials(t.name)}</div>
+                          <div>
+                            <div className="text-[13px] font-bold leading-tight">{t.name}</div>
+                            <div className="text-[11px] text-gray-500">{t.sport} • {t.state}</div>
+                          </div>
+                        </div>
+                        <span className={`text-[10px] font-black tracking-widest px-2 py-1 rounded-full ${t.trend === "HOT" ? "bg-red-500/15 text-red-600 border border-red-500/20" : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/20"}`}>{t.trend}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <a href="/shop/" className="block rounded-2xl bg-white border border-gray-200 shadow-sm p-4 hover:border-[#f97316]/60 transition-colors">
+                  <div className="text-[11px] font-black tracking-widest text-[#f97316] mb-1">VARSITY BOWL SHOP</div>
+                  <div className="font-black text-[15px] leading-tight">Blank football jerseys - 6 colors</div>
+                  <div className="text-[12px] text-gray-600 mt-1">Team gear picked for high school programs.</div>
+                  <span className="mt-3 inline-flex rounded-full bg-[#f97316] text-white text-[11px] font-black tracking-widest px-3 py-1.5">SHOP NOW</span>
+                </a>
+
+                <div className="rounded-2xl bg-[#f97316] p-4 text-white">
+                  <div className="font-black text-[14px] tracking-tight">
+                    BROWSE BY STATE
+                  </div>
+                  <div className="text-[12px] font-medium mt-1 leading-snug opacity-80">Pick a state to filter the schedule.</div>
+                  {quickStates.length > 0 && (
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                      {quickStates.map(o => (
+                        <button key={o.code} onClick={() => setStateFilter(c => c === o.code ? "ALL" : o.code)}
+                          className={`rounded-full px-3 py-1.5 text-[11px] font-black tracking-widest border transition-colors ${stateFilter === o.code ? "bg-white text-white border-gray-200" : "bg-white text-zinc-800 border-white hover:bg-orange-50"}`}>{o.name.toUpperCase()}</button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-4">
+                  <div className="text-[11px] font-black tracking-widest text-gray-500 mb-2">ABOUT VARSITY BOWL</div>
+                  <p className="text-[13px] leading-relaxed text-gray-600">Your ultimate destination for high school sports coverage, schedules, rankings and live updates.</p>
+                </div>
+              </aside>
+            </div>
+          </main>
+
+          <footer className="mt-8 border-t border-gray-200 bg-white">
+            <div className="mx-auto max-w-[1440px] px-4 lg:px-6 py-10">
+              <div className="grid grid-cols-12 gap-8">
+                <div className="col-span-12 md:col-span-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-9 w-9 rounded-full bg-[#f97316] flex items-center justify-center font-black text-white text-[15px]">VB</div>
+                    <div className="leading-none">
+                      <div className="font-black text-[16px] tracking-tight">VARSITY BOWL</div>
+                      <div className="text-[10px] font-bold tracking-[0.18em] text-gray-500">THE HUB FOR HIGH SCHOOL SPORTS</div>
+                    </div>
+                  </div>
+                  <p className="mt-4 text-[13px] leading-relaxed text-gray-500 max-w-sm">Your ultimate destination for high school sports coverage.</p>
+                </div>
+                <div className="col-span-6 md:col-span-2">
+                  <div className="text-[11px] font-black tracking-widest text-gray-600 mb-3">SPORTS</div>
+                  <ul className="space-y-2 text-[13px] text-gray-500">
+                    {["Football","Basketball","Baseball","Soccer","Volleyball","Lacrosse","Softball"].map(s => (
+                      <li key={s}><a href="#schedule" onClick={goSport(s.toUpperCase())} className="hover:text-zinc-700 transition-colors">{s}</a></li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="col-span-6 md:col-span-2">
+                  <div className="text-[11px] font-black tracking-widest text-gray-600 mb-3">STATES</div>
+                  <ul className="space-y-2 text-[13px] text-gray-500">
+                    {quickStates.map(o => (
+                      <li key={o.code}><a href="#schedule" onClick={(e) => { e.preventDefault(); setStateFilter(o.code); const el = document.getElementById("schedule"); if (el) el.scrollIntoView({ behavior: "smooth" }); }} className="hover:text-zinc-700 transition-colors">{o.name}</a></li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="col-span-12 md:col-span-4">
+                  <div className="text-[11px] font-black tracking-widest text-gray-600 mb-3">ABOUT VARSITY BOWL</div>
+                  <p className="text-[13px] leading-relaxed text-gray-500">Varsity Bowl brings together the best high school matchups across the country. Curated games that matter most for fans, families and scouts.</p>
+                  <div className="mt-4 flex items-center gap-2 text-[11px] text-gray-500">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"/>
+                    Independent network • Not affiliated with any association
+                  </div>
+                </div>
+              </div>
+              <div className="mt-10 pt-6 border-t border-gray-200 flex flex-col md:flex-row items-center justify-between gap-3 text-[12px] text-gray-500">
+                <div>© {new Date().getFullYear()} Varsity Bowl — The Hub for High School Sports</div>
+                <div className="flex items-center gap-4">
+                  <a href="/shop/" className="hover:text-gray-600 transition-colors">Shop</a>
+                  <a href="about.html" className="hover:text-gray-600 transition-colors">About</a>
+                  <a href="privacy.html" className="hover:text-gray-600 transition-colors">Privacy</a>
+                  <a href="terms.html" className="hover:text-gray-600 transition-colors">Terms</a>
+                  <a href="contact.html" className="hover:text-gray-600 transition-colors">Contact</a>
+                </div>
+              </div>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<ErrorBoundary><App /></ErrorBoundary>);
+  </script>
+
+  <script>
+    (function(){
+      function m(a){
+        var h=a.getAttribute("href"); if(!h) return;
+        try {
+          var u=new URL(h,document.baseURI);
+          if((u.protocol==="http:"||u.protocol==="https:") && u.host!==location.host){
+            a.target="_blank"; a.rel="noopener noreferrer";
+          }
+        } catch(e){}
+      }
+      function s(){ document.querySelectorAll("a[href]").forEach(m); }
+      if(document.readyState!=="loading"){ s(); } else { document.addEventListener("DOMContentLoaded",s); }
+      document.addEventListener("click",function(e){
+        var a=e.target&&e.target.closest&&e.target.closest("a[href]");
+        if(a){ m(a); }
+      },true);
+    })();
+  </script>
+  <!-- ===== IKLAN ADSTERRA — NATIVE BANNER ===== -->
+  <div id="ad-native-bottom">
+    <script async="async" data-cfasync="false" src="https://pl31705680.profitableratecpmnetwork.com/f3d84e0d4c9df1f92a465ae571e7d54b/invoke.js"></script>
+    <div id="container-f3d84e0d4c9df1f92a465ae571e7d54b"></div>
+  </div>
+
+  <!-- ===== IKLAN ADSTERRA — SOCIAL BAR ===== -->
+  <script src="https://pl31705681.profitableratecpmnetwork.com/1d/78/da/1d78da20a8eb58e89205a82cb7067504.js"></script>
+
+<!-- Histats.com  START  (async) -->
+<script type="text/javascript">var _Hasync= _Hasync|| [];
+_Hasync.push(['Histats.start', '1,5056765,4,408,270,55,00011111']);
+_Hasync.push(['Histats.fasi', '1']);
+_Hasync.push(['Histats.track_hits', '']);
+(function() {
+var hs = document.createElement('script'); hs.type = 'text/javascript'; hs.async = true;
+hs.src = ('//s10.histats.com/js15_as.js');
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
+})();</script>
+<noscript><a href="/" target="_blank"><img src="//sstatic1.histats.com/0.gif?5056765&101" alt="" border="0"></a></noscript>
+<!-- Histats.com  END  -->
+</body>
+</html>

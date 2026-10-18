@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Watch — Varsity Bowl</title>
+  <meta name="description" content="Watch live high school football, basketball, volleyball, soccer, baseball and more on Varsity Bowl.">
+
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="48x48">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="theme-color" content="#ffffff">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Varsity Bowl">
+  <meta property="og:title" content="Watch Live — Varsity Bowl">
+  <meta property="og:description" content="Watch live high school football, basketball, volleyball, soccer, baseball and more on Varsity Bowl.">
+  <meta property="og:image" content="https://sportfusion.online/og-image.png">
+  <meta property="og:image:secure_url" content="https://sportfusion.online/og-image.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Varsity Bowl — The Hub for High School Sports">
+  <meta property="og:locale" content="en_US">
+
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Watch Live — Varsity Bowl">
+  <meta name="twitter:description" content="Watch live high school football, basketball, volleyball, soccer, baseball and more on Varsity Bowl.">
+  <meta name="twitter:image" content="https://sportfusion.online/og-image.png">
+  <meta name="twitter:image:alt" content="Varsity Bowl — The Hub for High School Sports">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.6/babel.min.js"></script>
+  <style>
+    *,:after,:before{box-sizing:border-box}
+    body{overflow-x:clip;margin:0;font-family:Inter,ui-sans-serif,system-ui,sans-serif;background:#f5f5f5;color:#212121}
+    ::selection{background:#f97316;color:#fff}
+    .pulse-live{animation:pulseLive 1.5s ease-in-out infinite}
+    @keyframes pulseLive{0%,100%{opacity:1}50%{opacity:.5}}
+    .spin-1s{animation:spin 1s linear infinite}
+    /* Wadah iklan di bagian bawah halaman */
+    #ad-native-bottom{max-width:1440px;margin:0 auto;padding:16px;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" data-type="module">
+    const { useState, useEffect, useMemo } = React;
+
+    // ============================================================
+    // KONFIGURASI STREAM
+    // ============================================================
+    const DEFAULT_STREAM_URL = "";
+
+    const LIVE_BEFORE_MS = 30 * 60e3;
+    const LIVE_AFTER_MS  = 3 * 3600e3;
+
+    // ============================================================
+    // PARSE QUERY PARAMS
+    // ============================================================
+    const params = new URLSearchParams(location.search);
+    const G = {
+      id:         params.get("id") || "",
+      sport:      (params.get("sport") || "").toUpperCase(),
+      gender:     (params.get("gender") || "").toLowerCase(),
+      home:       params.get("home") || "",
+      away:       params.get("away") || "",
+      homeFull:   params.get("homeFull") || params.get("home") || "",
+      awayFull:   params.get("awayFull") || params.get("away") || "",
+      rawDate:    params.get("rawDate") || "",
+      date:       params.get("date") || "",
+      time:       params.get("time") || "",
+      location:   params.get("location") || "",
+      state:      (params.get("state") || "").toUpperCase(),
+      gameType:   params.get("gameType") || "",
+      league:     params.get("league") || "",
+      prestige:   parseInt(params.get("prestige") || "0", 10),
+      description: params.get("description") || "",
+      neutral:    params.get("neutral") === "true",
+      homeLogo:   params.get("homeLogo") || "",
+      awayLogo:   params.get("awayLogo") || "",
+      streamUrl:  params.get("stream") || DEFAULT_STREAM_URL
+    };
+
+    // ============================================================
+    // TIME HELPERS (module-level, dipakai kapan saja)
+    // ============================================================
+    const STATE_TZ = {
+      CT:"America/New_York",DE:"America/New_York",DC:"America/New_York",FL:"America/New_York",GA:"America/New_York",
+      ME:"America/New_York",MD:"America/New_York",MA:"America/New_York",NH:"America/New_York",NJ:"America/New_York",
+      NY:"America/New_York",NC:"America/New_York",OH:"America/New_York",PA:"America/New_York",RI:"America/New_York",
+      SC:"America/New_York",VT:"America/New_York",VA:"America/New_York",WV:"America/New_York",MI:"America/New_York",
+      IN:"America/Indiana/Indianapolis",KY:"America/New_York",
+      AL:"America/Chicago",AR:"America/Chicago",IL:"America/Chicago",IA:"America/Chicago",KS:"America/Chicago",
+      LA:"America/Chicago",MN:"America/Chicago",MS:"America/Chicago",MO:"America/Chicago",NE:"America/Chicago",
+      ND:"America/Chicago",OK:"America/Chicago",SD:"America/Chicago",TN:"America/Chicago",TX:"America/Chicago",WI:"America/Chicago",
+      CO:"America/Denver",ID:"America/Boise",MT:"America/Denver",NM:"America/Denver",UT:"America/Denver",WY:"America/Denver",
+      AZ:"America/Phoenix",
+      CA:"America/Los_Angeles",NV:"America/Los_Angeles",OR:"America/Los_Angeles",WA:"America/Los_Angeles",
+      AK:"America/Anchorage",HI:"Pacific/Honolulu"
+    };
+
+    const tzOffsetMs = (utcMs, tz) => {
+      const o = {};
+      new Intl.DateTimeFormat("en-US", { timeZone: tz, hourCycle: "h23", year: "numeric", month: "2-digit",
+        day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+        .formatToParts(new Date(utcMs)).forEach(x => { o[x.type] = x.value; });
+      return Date.UTC(+o.year, +o.month - 1, +o.day, +o.hour, +o.minute, +o.second) - utcMs;
+    };
+    const zonedToUtcMs = (rawDate, hh, mm, tz) => {
+      const [y, mo, d] = rawDate.split("-").map(Number);
+      const wall = Date.UTC(y, mo - 1, d, hh, mm);
+      let t = wall - tzOffsetMs(wall, tz);
+      t = wall - tzOffsetMs(t, tz);
+      return t;
+    };
+    const calcGameStartMs = (rawDate, time, tz) => {
+      if (!rawDate) return null;
+      const m = /(\d{1,2}):(\d{2})\s*(AM|PM)/i.exec(time || "");
+      if (!m) return null;
+      let hh = parseInt(m[1], 10) % 12;
+      if (/pm/i.test(m[3])) hh += 12;
+      const mm = parseInt(m[2], 10);
+      try { const t = zonedToUtcMs(rawDate, hh, mm, tz); return isNaN(t) ? null : t; } catch (e) { return null; }
+    };
+
+    const IS_US_VIEWER = (() => {
+      try {
+        const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+        return /^(America\/(New_York|Chicago|Denver|Los_Angeles|Phoenix|Anchorage|Boise|Detroit|Juneau|Adak|Nome|Sitka|Yakutat|Metlakatla|Menominee|Indiana\/|Kentucky\/|North_Dakota\/)|Pacific\/Honolulu|US\/)/.test(tz);
+      } catch (e) { return false; }
+    })();
+
+    // ============================================================
+    // LOGO TIM
+    // ============================================================
+    const FIREBASE_CONFIG = {
+      apiKey: "AIzaSyBMMd10vJuEE-opTcYSytqKraeCijrOeLs",
+      authDomain: "varcitybowl.firebaseapp.com",
+      projectId: "varcitybowl",
+      storageBucket: "varcitybowl.firebasestorage.app",
+      messagingSenderId: "57529914807",
+      appId: "1:57529914807:web:73c9fcc9dbf372892c4432"
+    };
+    let fsPromise = null;
+    const getFs = () => fsPromise || (fsPromise = (async () => {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js");
+      const { getFirestore, doc, getDoc } = await import("https://www.gstatic.com/firebasejs/10.7.0/firebase-firestore.js");
+      return { db: getFirestore(initializeApp(FIREBASE_CONFIG)), doc, getDoc };
+    })());
+
+    // Kalau cuma ada ID (URL pendek), fetch data lengkap dari Firestore
+    const G_DATA_READY = (G.id && !G.home)
+      ? getFs()
+          .then(({ db, doc, getDoc }) => getDoc(doc(db, "schedules_all", G.id)))
+          .then((snap) => {
+            if (snap.exists()) {
+              const d = snap.data();
+              G.sport = String(d.sport || "").toUpperCase();
+              G.gender = String(d.gender || "").toLowerCase();
+              G.home = String(d.home || "");
+              G.away = String(d.away || "");
+              G.homeFull = String(d.homeFull || d.home || "");
+              G.awayFull = String(d.awayFull || d.away || "");
+              G.rawDate = String(d.rawDate || "");
+              G.date = String(d.date || "");
+              G.time = String(d.time || "");
+              G.location = String(d.location || "");
+              G.state = String(d.state || "").toUpperCase();
+              G.gameType = String(d.gameType || "");
+              G.league = String(d.league || "");
+              G.prestige = Number(d.prestige) || 0;
+              G.description = String(d.description || "");
+              G.neutral = d.neutral === true;
+              G.homeLogo = String(d.homeLogo || "");
+              G.awayLogo = String(d.awayLogo || "");
+              if (d.streamUrl) G.streamUrl = String(d.streamUrl);
+            }
+          })
+          .catch((e) => console.warn("[Varsity Bowl] gagal fetch game:", e))
+      : Promise.resolve();
+
+    const logoKeyOf = (u) => {
+      const m = /\/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})\.[a-z]+(\?|$)/i.exec(String(u || ""));
+      return m ? m[1].toLowerCase() : "";
+    };
+    const getCachedLogo = (k) => {
+      try { return localStorage.getItem("vbl1:" + k) || ""; } catch (e) { return ""; }
+    };
+    const fetchLogo = async (k) => {
+      try {
+        const { db, doc, getDoc } = await getFs();
+        const snap = await getDoc(doc(db, "team_logos", k));
+        const d = snap.exists() ? snap.data().d : "";
+        if (typeof d === "string" && d.startsWith("data:image/")) {
+          try { localStorage.setItem("vbl1:" + k, d); } catch (e) {}
+          return d;
+        }
+      } catch (e) { console.warn("[Varsity Bowl] logo gagal dimuat:", e); }
+      return "";
+    };
+    const TeamLogo = ({ src, name, cls, fallbackCls }) => {
+      const key = logoKeyOf(src);
+      const [data, setData] = useState(() => (key ? getCachedLogo(key) : ""));
+      useEffect(() => {
+        let alive = true;
+        if (!key) { setData(""); return; }
+        const c = getCachedLogo(key);
+        if (c) { setData(c); return; }
+        fetchLogo(key).then((d) => { if (alive && d) setData(d); });
+        return () => { alive = false; };
+      }, [key]);
+      if (data) return <img src={data} alt={name} decoding="async" className={cls + " object-contain bg-white p-1"} />;
+      return <div className={cls + " " + fallbackCls + " flex items-center justify-center font-black"}>{initials(name)}</div>;
+    };
+
+    const pad2 = (n) => String(n).padStart(2, "0");
+    const initials = (name) => (name || "?").split(" ").filter(Boolean).map(n => n[0]).join("").slice(0, 3).toUpperCase() || "?";
+    const sportLabelFn = (s) => s === "ALL" ? "ALL SPORTS" : String(s).replace(/-/g, " ");
+
+    // ============================================================
+    // ICONS
+    // ============================================================
+    const Icon = ({d, extra}) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+           className={extra}>{d}</svg>
+    );
+    const IcArrowLeft = ({c}) => <Icon extra={c} d={<><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></>}/>;
+    const IcClock     = ({c}) => <Icon extra={c} d={<><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></>}/>;
+    const IcMap       = ({c}) => <Icon extra={c} d={<><path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0"/><circle cx="12" cy="10" r="3"/></>}/>;
+    const IcPlay      = ({c}) => <Icon extra={c} d={<polygon points="6 3 20 12 6 21 6 3"/>}/>;
+    const IcStar      = ({c}) => <Icon extra={c} d={<path d="M11.525 2.295a.53.53 0 0 1 .95 0l2.31 4.679a2.123 2.123 0 0 0 1.595 1.16l5.166.756a.53.53 0 0 1 .294.904l-3.736 3.638a2.123 2.123 0 0 0-.611 1.878l.882 5.14a.53.53 0 0 1-.771.56l-4.618-2.428a2.122 2.122 0 0 0-1.973 0L6.396 21.01a.53.53 0 0 1-.77-.56l.881-5.139a2.122 2.122 0 0 0-.611-1.879L2.16 9.795a.53.53 0 0 1 .294-.906l5.165-.755a2.122 2.122 0 0 0 1.597-1.16z"/>}/>;
+    const IcRadio     = ({c}) => <Icon extra={c} d={<><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></>}/>;
+    const IcCalendar  = ({c}) => <Icon extra={c} d={<><path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/></>}/>;
+    const IcShare     = ({c}) => <Icon extra={c} d={<><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.59 13.51 6.83 3.98"/><path d="m15.41 6.51-6.82 3.98"/></>}/>;
+
+    // ============================================================
+    // WATCH PAGE
+    // ============================================================
+    function WatchPage() {
+      const [now, setNow] = useState(Date.now());
+      const [ready, setReady] = useState(!G.id || !!G.home);
+
+      // Fetch data dari Firestore kalau URL cuma punya id
+      useEffect(() => {
+        let alive = true;
+        G_DATA_READY.then(() => { if (alive) setReady(true); });
+        return () => { alive = false; };
+      }, []);
+
+      // Ticker tiap 1 detik buat countdown
+      useEffect(() => {
+        const t = setInterval(() => setNow(Date.now()), 1000);
+        return () => clearInterval(t);
+      }, []);
+
+      // Judul dokumen dinamis
+      useEffect(() => {
+        if (ready) document.title = G.away && G.home ? `${G.away} @ ${G.home} — Varsity Bowl` : "Watch — Varsity Bowl";
+      }, [ready]);
+
+      if (!ready) {
+        return (
+          <div className="min-h-screen bg-[#f5f5f5] text-zinc-900 flex items-center justify-center">
+            <div className="text-center">
+              <div className="inline-block h-8 w-8 rounded-full border-2 border-gray-300 border-t-[#f97316] spin-1s mb-3"></div>
+              <div className="text-gray-500 text-sm">Loading…</div>
+            </div>
+          </div>
+        );
+      }
+
+      // Setelah data siap, hitung semua turunan
+      const GAME_TZ = STATE_TZ[G.state] || "America/Los_Angeles";
+      const GAME_START_MS = calcGameStartMs(G.rawDate, G.time, GAME_TZ);
+      const DISPLAY_TZ = IS_US_VIEWER ? undefined : GAME_TZ;
+
+      const sportTitle = ((G.gender ? G.gender.toUpperCase() + " " : "") + sportLabelFn(G.sport)).trim();
+
+      const fmtDateLong = (rawDate) => {
+        if (!rawDate) return G.date || "TBA";
+        if (GAME_START_MS != null) {
+          return new Date(GAME_START_MS).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: DISPLAY_TZ });
+        }
+        const d = new Date(rawDate + "T12:00:00Z");
+        return d.toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric", timeZone: "UTC" });
+      };
+      const fmtTimeLong = () => {
+        if (GAME_START_MS == null) return G.time || "Time TBA";
+        return new Date(GAME_START_MS).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZoneName: "short", timeZone: DISPLAY_TZ });
+      };
+
+      // State: "upcoming" | "live" | "past" | "tba"
+      let gameState = "tba";
+      if (GAME_START_MS != null) {
+        const diff = GAME_START_MS - now;
+        if (diff > LIVE_BEFORE_MS) gameState = "upcoming";
+        else if (diff >= -LIVE_AFTER_MS) gameState = "live";
+        else gameState = "past";
+      }
+
+      // Countdown breakdown
+      let cd = null;
+      if (GAME_START_MS != null) {
+        const diff = Math.max(0, GAME_START_MS - now);
+        cd = {
+          days:  Math.floor(diff / 86400e3),
+          hours: Math.floor((diff % 86400e3) / 3600e3),
+          mins:  Math.floor((diff % 3600e3) / 60e3),
+          secs:  Math.floor((diff % 60e3) / 1000)
+        };
+      }
+
+      // Share
+      const buildShare = () => {
+        const hasTeams = G.away && G.home;
+        const title = hasTeams ? `${G.away} vs ${G.home} — Varsity Bowl` : "Varsity Bowl";
+        const lines = [];
+        lines.push(hasTeams ? `${G.away} vs ${G.home}${sportTitle ? " (" + sportTitle + ")" : ""}` : "Watch on Varsity Bowl");
+        if (G.rawDate) lines.push(`${fmtDateLong(G.rawDate)} • ${fmtTimeLong()}`);
+        lines.push("Watch live on Varsity Bowl:");
+        return { title, text: lines.join("\n"), url: location.href };
+      };
+
+      const ShareButton = () => {
+        const [copied, setCopied] = useState(false);
+        const onShare = async () => {
+          const { title, text, url } = buildShare();
+          if (navigator.share) {
+            try { await navigator.share({ title, text, url }); return; }
+            catch (e) { if (e && e.name === "AbortError") return; }
+          }
+          const full = text + "\n" + url;
+          try { await navigator.clipboard.writeText(full); }
+          catch (e) {
+            const ta = document.createElement("textarea");
+            ta.value = full; document.body.appendChild(ta); ta.select();
+            try { document.execCommand("copy"); } catch (e2) {}
+            document.body.removeChild(ta);
+          }
+          setCopied(true); setTimeout(() => setCopied(false), 2000);
+        };
+        return (
+          <button type="button" onClick={onShare} aria-label="Share this game"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-[#f97316] text-white px-3 py-2 text-[12px] font-black tracking-widest hover:bg-orange-400 transition-colors">
+            <IcShare c="h-3.5 w-3.5"/> {copied ? "COPIED" : "SHARE"}
+          </button>
+        );
+      };
+
+      return (
+        <div className="min-h-screen bg-[#f5f5f5] text-zinc-900 flex flex-col">
+          <div className="h-1 w-full bg-[#f97316]" />
+
+          {/* HEADER */}
+          <header className="border-b border-gray-200 bg-white shadow-sm">
+            <div className="mx-auto max-w-[1200px] px-4 lg:px-6 py-4 flex items-center justify-between gap-3">
+              <a href="./" className="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition-opacity">
+                <div className="h-9 w-9 shrink-0 rounded-full bg-[#f97316] flex items-center justify-center font-black text-white text-[15px]">VB</div>
+                <div className="leading-none min-w-0">
+                  <div className="font-black text-[16px] tracking-tight whitespace-nowrap">VARSITY BOWL</div>
+                  <div className="hidden sm:block text-[10px] font-bold tracking-[0.18em] text-gray-500 whitespace-nowrap">THE HUB FOR HIGH SCHOOL SPORTS</div>
+                </div>
+              </a>
+              <div className="flex items-center gap-2 shrink-0">
+                <ShareButton/>
+                <a href="./" className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white border border-gray-200 px-3 py-2 text-[12px] font-bold tracking-widest text-zinc-700 hover:text-[#f97316] hover:border-orange-300 transition-colors">
+                <IcArrowLeft c="h-3.5 w-3.5"/> BACK
+              </a>
+              </div>
+            </div>
+          </header>
+
+          <main className="flex-1 mx-auto w-full max-w-[1200px] px-4 lg:px-6 py-6 lg:py-10">
+
+            {/* MATCHUP HEADER */}
+            <div className="rounded-3xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+              <div className="relative p-5 lg:p-8">
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#f97316] via-orange-500 to-[#f97316]"/>
+
+                <div className="flex flex-wrap items-center gap-2 mb-5">
+                  <span className="rounded-full bg-[#f97316] text-white text-[10px] font-black tracking-widest px-2.5 py-1">{sportTitle || "GAME"}</span>
+                  {G.gameType && <span className="rounded-full bg-gray-100 border border-gray-300 text-zinc-700 text-[10px] font-black tracking-widest px-2.5 py-1">{G.gameType.toUpperCase()}</span>}
+                  {G.state && <span className="rounded-full bg-gray-100 border border-gray-300 text-zinc-700 text-[10px] font-black tracking-widest px-2.5 py-1">{G.state}</span>}
+                  {G.prestige > 0 && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-gray-50 border border-gray-200 px-2.5 py-1 text-[10px] font-black tracking-widest text-zinc-700">
+                      <IcStar c="h-3 w-3 text-[#f97316]"/> {G.prestige}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-12 items-center gap-4">
+                  <div className="col-span-5 flex flex-col items-center text-center">
+                    <TeamLogo src={G.awayLogo} name={G.away} cls="h-16 w-16 lg:h-20 lg:w-20 rounded-full border-2 border-gray-300" fallbackCls="bg-gray-100 text-[18px] lg:text-[22px]"/>
+                    <div className="mt-3 font-bold text-[14px] lg:text-[16px] leading-tight">{G.awayFull || G.away}</div>
+                    <div className="mt-1 text-[10px] font-black tracking-widest text-gray-500">AWAY</div>
+                  </div>
+                  <div className="col-span-2 flex flex-col items-center">
+                    <div className="text-[24px] lg:text-[32px] font-black text-[#f97316]">@</div>
+                  </div>
+                  <div className="col-span-5 flex flex-col items-center text-center">
+                    <TeamLogo src={G.homeLogo} name={G.home} cls="h-16 w-16 lg:h-20 lg:w-20 rounded-full border-2 border-orange-400" fallbackCls="bg-[#f97316] text-white text-[18px] lg:text-[22px]"/>
+                    <div className="mt-3 font-bold text-[14px] lg:text-[16px] leading-tight">{G.homeFull || G.home}</div>
+                    <div className="mt-1 text-[10px] font-black tracking-widest text-gray-500">HOME</div>
+                  </div>
+                </div>
+
+                <div className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[12px] text-gray-600">
+                  <span className="inline-flex items-center gap-1.5"><IcCalendar c="h-3.5 w-3.5 text-gray-500"/>{fmtDateLong(G.rawDate)}</span>
+                  <span className="inline-flex items-center gap-1.5"><IcClock c="h-3.5 w-3.5 text-gray-500"/>{fmtTimeLong()}</span>
+                  {(G.location || G.state) && <span className="inline-flex items-center gap-1.5"><IcMap c="h-3.5 w-3.5 text-gray-500"/>{[G.location, G.state].filter(Boolean).join(" • ")}</span>}
+                </div>
+              </div>
+            </div>
+
+            {/* PLAYER / COUNTDOWN AREA */}
+            <div className="mt-6 rounded-3xl bg-white border border-gray-200 shadow-sm overflow-hidden">
+
+              {gameState === "live" && (
+                <div className="bg-red-50 border-b border-red-200 px-5 py-3 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-red-500 pulse-live"/>
+                  <span className="text-[11px] font-black tracking-widest text-red-600">LIVE NOW</span>
+                  <span className="ml-auto text-[11px] text-red-500 font-bold tracking-widest hidden sm:inline">STREAMING IN PROGRESS</span>
+                </div>
+              )}
+              {gameState === "upcoming" && (
+                <div className="bg-orange-50 border-b border-orange-200 px-5 py-3 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-orange-500"/>
+                  <span className="text-[11px] font-black tracking-widest text-orange-700">STARTING SOON</span>
+                  <span className="ml-auto text-[11px] text-orange-600 font-bold tracking-widest hidden sm:inline">STREAM UNLOCKS 30 MIN BEFORE KICKOFF</span>
+                </div>
+              )}
+              {gameState === "past" && (
+                <div className="bg-gray-100 border-b border-gray-300 px-5 py-3 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-zinc-500"/>
+                  <span className="text-[11px] font-black tracking-widest text-gray-600">STREAM ENDED</span>
+                </div>
+              )}
+              {gameState === "tba" && (
+                <div className="bg-gray-100 border-b border-gray-300 px-5 py-3 flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-zinc-500"/>
+                  <span className="text-[11px] font-black tracking-widest text-gray-600">TIME TBA</span>
+                </div>
+              )}
+
+              <div className="aspect-video w-full bg-gray-50 relative">
+
+                {gameState === "upcoming" && cd && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="text-[11px] font-black tracking-[0.3em] text-gray-500 mb-4">STARTS IN</div>
+                    <div className="grid grid-cols-4 gap-3 lg:gap-5">
+                      {[
+                        {v: cd.days,  l: "DAYS"},
+                        {v: cd.hours, l: "HOURS"},
+                        {v: cd.mins,  l: "MINS"},
+                        {v: cd.secs,  l: "SECS"}
+                      ].map(({v, l}) => (
+                        <div key={l} className="rounded-2xl bg-white border border-gray-200 shadow-sm px-3 py-4 lg:px-6 lg:py-6 min-w-[68px] lg:min-w-[96px]">
+                          <div className="text-[28px] lg:text-[42px] font-black leading-none text-[#f97316] tabular-nums">{pad2(v)}</div>
+                          <div className="mt-2 text-[9px] lg:text-[10px] font-black tracking-widest text-gray-500">{l}</div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-6 max-w-md text-[12px] leading-relaxed text-gray-500">
+                      The live stream will appear here automatically once the game begins. Keep this page open.
+                    </div>
+                  </div>
+                )}
+
+                {gameState === "live" && (
+                  G.streamUrl ? (
+                    <iframe
+                      src={G.streamUrl}
+                      title="Live Stream"
+                      allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+                      allowFullScreen
+                      className="absolute inset-0 w-full h-full"
+                      frameBorder="0"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                      <div className="h-16 w-16 lg:h-20 lg:w-20 rounded-full bg-red-50 border border-red-200 flex items-center justify-center mb-4">
+                        <IcRadio c="h-8 w-8 lg:h-10 lg:w-10 text-red-600"/>
+                      </div>
+                      <div className="text-[13px] lg:text-[15px] font-black tracking-widest text-red-600 mb-2">STREAM IS LIVE</div>
+                      <div className="max-w-sm text-[12px] lg:text-[13px] leading-relaxed text-gray-600">
+                        The broadcast is running but the video player isn't configured yet.<br className="hidden sm:block"/>
+                        Check back soon.
+                      </div>
+                    </div>
+                  )
+                )}
+
+                {gameState === "past" && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="h-16 w-16 lg:h-20 lg:w-20 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center mb-4">
+                      <IcClock c="h-7 w-7 lg:h-9 lg:w-9 text-gray-500"/>
+                    </div>
+                    <div className="text-[13px] lg:text-[15px] font-black tracking-widest text-gray-600 mb-2">GAME HAS ENDED</div>
+                    <div className="max-w-sm text-[12px] lg:text-[13px] leading-relaxed text-gray-500">
+                      This broadcast is no longer available.
+                    </div>
+                  </div>
+                )}
+
+                {gameState === "tba" && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center">
+                    <div className="h-16 w-16 lg:h-20 lg:w-20 rounded-full bg-gray-100 border border-gray-300 flex items-center justify-center mb-4">
+                      <IcClock c="h-7 w-7 lg:h-9 lg:w-9 text-gray-500"/>
+                    </div>
+                    <div className="text-[13px] lg:text-[15px] font-black tracking-widest text-gray-600 mb-2">KICKOFF TIME TBA</div>
+                    <div className="max-w-sm text-[12px] lg:text-[13px] leading-relaxed text-gray-500">
+                      The start time hasn't been announced yet. Keep this page open — the stream will appear automatically.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {(G.description || G.league) && (
+              <div className="mt-6 grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <div className="lg:col-span-2 rounded-2xl bg-white border border-gray-200 shadow-sm p-5">
+                  <div className="text-[11px] font-black tracking-widest text-gray-500 mb-2">ABOUT THIS MATCHUP</div>
+                  <p className="text-[14px] leading-relaxed text-zinc-700">
+                    {G.description || `${G.away} visits ${G.home} in ${sportTitle.toLowerCase()}.`}
+                  </p>
+                </div>
+                <div className="rounded-2xl bg-white border border-gray-200 shadow-sm p-5">
+                  <div className="text-[11px] font-black tracking-widest text-gray-500 mb-3">GAME DETAILS</div>
+                  <ul className="space-y-2.5 text-[13px]">
+                    <li className="flex items-center justify-between gap-2"><span className="text-gray-500">Sport</span><span className="font-bold">{sportTitle || "TBA"}</span></li>
+                    <li className="flex items-center justify-between gap-2"><span className="text-gray-500">Type</span><span className="font-bold">{G.gameType || "—"}</span></li>
+                    {G.league && <li className="flex items-center justify-between gap-2"><span className="text-gray-500">League</span><span className="font-bold truncate">{G.league}</span></li>}
+                    <li className="flex items-center justify-between gap-2"><span className="text-gray-500">State</span><span className="font-bold">{G.state || "—"}</span></li>
+                    {G.prestige > 0 && <li className="flex items-center justify-between gap-2"><span className="text-gray-500">Prestige</span><span className="font-bold text-[#f97316]">{G.prestige}</span></li>}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-6 rounded-2xl bg-white border border-gray-200 shadow-sm p-5">
+              <div className="text-[11px] font-black tracking-widest text-gray-500 mb-2">HOW IT WORKS</div>
+              <ul className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[12px] text-gray-600">
+                <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-orange-500 shrink-0"/>The countdown runs until 30 minutes before kickoff.</li>
+                <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-red-500 shrink-0"/>Once the game goes live, the player appears automatically.</li>
+                <li className="flex items-start gap-2"><span className="mt-1 h-1.5 w-1.5 rounded-full bg-zinc-500 shrink-0"/>Keep this tab open — no need to refresh.</li>
+              </ul>
+            </div>
+          </main>
+
+          <footer className="border-t border-gray-200 bg-white mt-auto">
+            <div className="mx-auto max-w-[1200px] px-4 lg:px-6 py-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-[12px] text-gray-500">
+              <div>© {new Date().getFullYear()} Varsity Bowl — The Hub for High School Sports</div>
+              <div className="flex items-center gap-4">
+                <a href="./" className="hover:text-[#f97316]">Home</a>
+                <a href="./#schedule" className="hover:text-[#f97316]">Schedule</a>
+              </div>
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<WatchPage />);
+  </script>
+  <!-- ===== IKLAN ADSTERRA — NATIVE BANNER ===== -->
+  <div id="ad-native-bottom">
+    <script async="async" data-cfasync="false" src="https://pl31705680.profitableratecpmnetwork.com/f3d84e0d4c9df1f92a465ae571e7d54b/invoke.js"></script>
+    <div id="container-f3d84e0d4c9df1f92a465ae571e7d54b"></div>
+  </div>
+
+  <!-- ===== IKLAN ADSTERRA — SOCIAL BAR ===== -->
+  <script src="https://pl31705681.profitableratecpmnetwork.com/1d/78/da/1d78da20a8eb58e89205a82cb7067504.js"></script>
+
+<!-- Histats.com  START  (async) -->
+<script type="text/javascript">var _Hasync= _Hasync|| [];
+_Hasync.push(['Histats.start', '1,5056765,4,408,270,55,00011111']);
+_Hasync.push(['Histats.fasi', '1']);
+_Hasync.push(['Histats.track_hits', '']);
+(function() {
+var hs = document.createElement('script'); hs.type = 'text/javascript'; hs.async = true;
+hs.src = ('//s10.histats.com/js15_as.js');
+(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(hs);
+})();</script>
+<noscript><a href="/" target="_blank"><img src="//sstatic1.histats.com/0.gif?5056765&101" alt="" border="0"></a></noscript>
+<!-- Histats.com  END  -->
+</body>
+</html>
