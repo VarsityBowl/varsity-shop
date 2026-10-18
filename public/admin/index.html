@@ -102,6 +102,10 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#f97316}
         <div><label class="lbl">Harga (tampilan saja)</label><input type="text" id="f_price" maxlength="30" placeholder="$29.99"></div>
       </div>
       <div class="two">
+        <div><label class="lbl">Harga normal (sebelum diskon)</label><input type="text" id="f_list" maxlength="30" placeholder="$79.99"></div>
+        <div><label class="lbl">Diskon % (otomatis)</label><input type="number" id="f_disc" min="0" max="90" placeholder="25"></div>
+      </div>
+      <div class="two">
         <div><label class="lbl">Rating</label><input type="number" id="f_rating" step="0.1" min="0" max="5" value="4.6"></div>
         <div><label class="lbl">Reviews</label><input type="number" id="f_reviews" min="0" value="100"></div>
       </div>
@@ -116,9 +120,14 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#f97316}
       <label class="lbl">Poin fitur (1 baris per poin)</label><textarea id="f_details" rows="4"></textarea>
 
       <div class="chk">
-        <label><input type="checkbox" id="f_prime" checked> Prime</label>
+        <label><input type="checkbox" id="f_prime"> Prime</label>
         <label><input type="checkbox" id="f_featured"> Featured</label>
         <label><input type="checkbox" id="f_best"> Best Seller</label>
+      </div>
+      <div class="hint">
+        <b>Featured</b> = pilihan kamu, badge oranye (default tercentang untuk produk baru). <b>Best Seller</b> = badge hijau, tercentang otomatis kalau Amazon menandai produknya Best Seller. Salah satu saja cukup untuk naik ke urutan paling atas toko (yang terbaru di atas).<br>
+        <b>Prime</b> terisi otomatis dari TEMPEL DATA. <b>Diskon</b> (badge merah -25%) juga otomatis dari harga normal vs harga sekarang, dan hanya tampil di toko selama 7 hari sejak produk terakhir disimpan, supaya tidak memajang diskon basi.<br>
+        Badge <b>TOP RATED</b> (rating 4,5+ dan 50+ review) dan <b>NEW</b> (14 hari terakhir) muncul otomatis, tidak perlu dicentang.
       </div>
 
       <button class="btn pri" id="btnSave" style="width:100%;height:48px;margin-top:16px;font-size:14px">SIMPAN PRODUK</button>

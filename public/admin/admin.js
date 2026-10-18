@@ -77,6 +77,7 @@
       var tags = el('div', 'm');
       if (p.featured) tags.appendChild(el('span', 'tag o', 'FEATURED'));
       if (p.bestSeller) tags.appendChild(el('span', 'tag g', 'BEST SELLER'));
+      if (p.discount) tags.appendChild(el('span', 'tag', '-' + p.discount + '%'));
       tags.appendChild(el('span', 'tag', p.affLink ? 'LINK AFILIASI' : 'ASIN + TAG'));
       t.appendChild(tags);
       var acts = el('div', 'row'); acts.style.flexDirection = 'column';
@@ -207,11 +208,11 @@
 
   /* ---------- form ---------- */
   function clearForm() {
-    ['f_id', 'f_brand', 'f_name', 'f_sub', 'f_asin', 'f_aff', 'f_tag', 'f_price', 'f_colors', 'f_images', 'f_sizes', 'f_desc', 'f_details']
+    ['f_id', 'f_brand', 'f_name', 'f_sub', 'f_asin', 'f_aff', 'f_tag', 'f_price', 'f_list', 'f_disc', 'f_colors', 'f_images', 'f_sizes', 'f_desc', 'f_details']
       .forEach(function (id) { $(id).value = ''; });
     buildCat('Jersey'); buildSub(''); lastCrumbs = []; renderChips();
     $('f_rating').value = '4.6'; $('f_reviews').value = '100';
-    $('f_prime').checked = true; $('f_featured').checked = false; $('f_best').checked = false;
+    $('f_prime').checked = false; $('f_featured').checked = true; $('f_best').checked = false;
     $('pasteStatus').textContent = ''; currentSpecs = [];
   }
 
@@ -220,6 +221,7 @@
     $('f_id').value = p.id; $('f_brand').value = p.brand; $('f_name').value = p.name; $('f_sub').value = p.sub || '';
     buildCat(p.category); buildSub(p.subCategory || '');
     $('f_asin').value = p.asin; $('f_aff').value = p.affLink || ''; $('f_tag').value = p.tag || ''; $('f_price').value = p.price || '';
+    $('f_list').value = p.listPrice || ''; $('f_disc').value = p.discount || '';
     $('f_rating').value = p.rating; $('f_reviews').value = p.reviews;
     $('f_colors').value = (p.colors || []).map(function (c) { return [c.name, c.hex, c.image || ''].join(' | '); }).join('\n');
     var colorImgs = (p.colors || []).map(function (c) { return c.image; });
@@ -243,7 +245,7 @@
       id: $('f_id').value || undefined,
       brand: $('f_brand').value, name: $('f_name').value, sub: $('f_sub').value,
       category: $('f_category').value, subCategory: $('f_subcat').value,
-      asin: $('f_asin').value, affLink: $('f_aff').value, tag: $('f_tag').value, price: $('f_price').value,
+      asin: $('f_asin').value, affLink: $('f_aff').value, tag: $('f_tag').value, price: $('f_price').value, listPrice: $('f_list').value, discount: $('f_disc').value,
       rating: $('f_rating').value, reviews: $('f_reviews').value,
       colors: parseColors($('f_colors').value), images: lines($('f_images').value),
       sizes: $('f_sizes').value.split(','), desc: $('f_desc').value, details: lines($('f_details').value), specs: currentSpecs,
@@ -280,6 +282,9 @@
           if (validAff(aff)) { $('f_aff').value = aff; affMsg = 'ada ✓'; }
           else { affMsg = 'ditolak (format tidak cocok: ' + aff.slice(0, 40) + ')'; toast('Link afiliasi dari data tidak valid, dilewati', true); }
         }
+        if (typeof d.prime === 'boolean') $('f_prime').checked = d.prime;
+        if (d.bestSeller) $('f_best').checked = true;
+        $('f_list').value = d.listPrice || ''; $('f_disc').value = d.discount || '';
         if (d.asin) $('f_asin').value = d.asin;
         if (d.name) $('f_name').value = d.name;
         if (d.brand) $('f_brand').value = d.brand;
@@ -310,7 +315,7 @@
         $('f_sizes').value = (d.sizes || []).join(', ');
         $('f_details').value = (d.bullets || []).join('\n');
         currentSpecs = (d.specs || []).filter(function (s) { return s && s.label && s.value; });
-        $('pasteStatus').textContent = '✅ Terisi: ' + String(d.name || '').slice(0, 60) + ' | Warna: ' + cols.length + ' | Foto: ' + imgs.length + ' | Kategori: ' + (hit ? hit + (subHit ? ' › ' + subHit : ' (sub kategori belum cocok)') : (d.category ? '"' + d.category + '" belum ada: pilih manual atau ketuk + Kategori baru' : 'isi manual')) + ' | Link afiliasi: ' + affMsg + ' - cek dulu lalu SIMPAN.';
+        $('pasteStatus').textContent = '✅ Terisi: ' + String(d.name || '').slice(0, 60) + ' | Warna: ' + cols.length + ' | Foto: ' + imgs.length + ' | Kategori: ' + (hit ? hit + (subHit ? ' › ' + subHit : ' (sub kategori belum cocok)') : (d.category ? '"' + d.category + '" belum ada: pilih manual atau ketuk + Kategori baru' : 'isi manual')) + ' | Prime: ' + (typeof d.prime === 'boolean' ? (d.prime ? 'ya ✓' : 'tidak') : 'cek manual') + ' | Best Seller: ' + (d.bestSeller ? 'ya ✓' : 'tidak') + ' | Diskon: ' + (d.discount ? '-' + d.discount + '%' : 'tidak ada') + ' | Link afiliasi: ' + affMsg + ' - cek dulu lalu SIMPAN.';
         toast('Data ditempel ✅');
       });
   }
