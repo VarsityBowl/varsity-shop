@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Dashboard Toko - Varsity Bowl</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:#f5f5f5;color:#212121;font-size:14px}
+.wrap{max-width:1200px;margin:0 auto;padding:20px 16px 60px}
+h1{margin:0;font-size:24px;font-weight:900}h1 b{color:#f97316}
+.sub{margin:4px 0 0;color:#6b7280;font-size:12px}
+.top{display:flex;flex-wrap:wrap;gap:12px;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.row{display:flex;flex-wrap:wrap;gap:8px}
+.btn{height:40px;padding:0 16px;border-radius:999px;border:1px solid #e5e7eb;background:#f3f4f6;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.btn.pri{background:#f97316;border-color:#f97316;color:#fff}.btn.red{background:#fef2f2;border-color:#fecaca;color:#dc2626}
+.btn.sm{height:32px;padding:0 12px;font-size:11px}
+.layout{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+@media(min-width:1024px){.layout{grid-template-columns:400px minmax(0,1fr)}.formbox{position:sticky;top:16px;align-self:start}}
+.box{background:#fff;border:1px solid #e5e7eb;border-radius:16px;padding:16px}
+.lbl{display:block;margin:12px 0 4px;font-size:12px;color:#4b5563}
+.hint{font-size:11px;color:#9ca3af;margin-top:4px;line-height:1.4}
+input[type=text],input[type=number],textarea,select{width:100%;height:42px;border:1px solid #e5e7eb;border-radius:12px;background:#f9fafb;padding:0 12px;font:inherit;font-size:14px}
+textarea{height:auto;padding:10px 12px;resize:vertical}
+input:focus,textarea:focus,select:focus{outline:none;border-color:#f97316}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.chk{display:flex;flex-wrap:wrap;gap:16px;margin-top:14px}.chk label{display:flex;gap:6px;align-items:center;font-size:12px}
+.item{display:flex;gap:12px;align-items:center;padding:10px;border:1px solid #e5e7eb;border-radius:14px;background:#fff;margin-bottom:10px}
+.item img{height:56px;width:56px;object-fit:contain;border-radius:10px;background:#fff;flex:none}
+.item .t{flex:1;min-width:0}.item .t b{display:block;font-size:13px;line-height:1.3;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.item .m{font-size:11px;color:#6b7280;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tag{font-size:10px;font-weight:800;padding:2px 8px;border-radius:999px;background:#f3f4f6;color:#6b7280;margin-right:4px}
+.tag.o{background:#f97316;color:#fff}.tag.g{background:#10b981;color:#fff}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#18181b;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;display:none;z-index:50;max-width:90vw}
+#toast.err{background:#dc2626}
+.guide{margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280;line-height:1.5}
+.guide ol{padding-left:16px;margin:6px 0 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>DASHBOARD TOKO <b>BOS</b></h1>
+      <p class="sub">Simpan = langsung tampil di toko (database Cloudflare D1). Tidak perlu export/upload.</p>
+    </div>
+    <div class="row">
+      <button class="btn" id="btnExport">EXPORT JSON</button>
+      <button class="btn" id="btnImport">IMPOR JSON</button>
+      <input type="file" id="importFile" accept=".json" hidden>
+    </div>
+  </div>
+
+  <div class="layout">
+    <div class="box formbox">
+      <b style="font-size:11px;letter-spacing:.12em;color:#6b7280">FORM PRODUK</b>
+      <input type="hidden" id="f_id">
+
+      <label class="lbl">Brand *</label><input type="text" id="f_brand" maxlength="60">
+      <label class="lbl">Nama Produk *</label><input type="text" id="f_name" maxlength="200">
+      <label class="lbl">Sub nama</label><input type="text" id="f_sub" maxlength="120">
+
+      <div class="two">
+        <div><label class="lbl">Kategori</label><input type="text" id="f_category" list="catList" maxlength="40" value="Jersey"><datalist id="catList"></datalist></div>
+        <div><label class="lbl">Sub kategori</label><input type="text" id="f_subcat" maxlength="40"></div>
+      </div>
+
+      <label class="lbl">ASIN * (boleh tempel link amazon.com/dp/...)</label>
+      <div class="row" style="flex-wrap:nowrap"><input type="text" id="f_asin"><button class="btn pri sm" id="btnPaste" type="button" style="height:42px;white-space:nowrap">TEMPEL DATA</button></div>
+      <div class="hint" id="pasteStatus"></div>
+
+      <label class="lbl">Link afiliasi (Short Link SiteStripe, mis. https://link.amazon/xxxx)</label>
+      <input type="text" id="f_aff"><div class="hint">Kalau diisi, tombol SHOP memakai link ini persis. Kosong = pakai ASIN + tag.</div>
+
+      <div class="two">
+        <div><label class="lbl">Tag (opsional)</label><input type="text" id="f_tag" maxlength="40"></div>
+        <div><label class="lbl">Harga (tampilan saja)</label><input type="text" id="f_price" maxlength="30" placeholder="$29.99"></div>
+      </div>
+      <div class="two">
+        <div><label class="lbl">Rating</label><input type="number" id="f_rating" step="0.1" min="0" max="5" value="4.6"></div>
+        <div><label class="lbl">Reviews</label><input type="number" id="f_reviews" min="0" value="100"></div>
+      </div>
+
+      <label class="lbl">Warna &amp; gambar (1 baris per warna): Nama | #hex | link gambar</label>
+      <textarea id="f_colors" rows="4" placeholder="Orange | #f97316 | https://m.media-amazon.com/images/I/xxx.jpg"></textarea>
+      <label class="lbl">Gambar tambahan (1 link per baris)</label>
+      <textarea id="f_images" rows="3" placeholder="https://..."></textarea>
+
+      <label class="lbl">Ukuran (pisah koma, boleh kosong)</label><input type="text" id="f_sizes" placeholder="S, M, L, XL">
+      <label class="lbl">Deskripsi</label><textarea id="f_desc" rows="3" maxlength="2000"></textarea>
+      <label class="lbl">Poin fitur (1 baris per poin)</label><textarea id="f_details" rows="4"></textarea>
+
+      <div class="chk">
+        <label><input type="checkbox" id="f_prime" checked> Prime</label>
+        <label><input type="checkbox" id="f_featured"> Featured</label>
+        <label><input type="checkbox" id="f_best"> Best Seller</label>
+      </div>
+
+      <button class="btn pri" id="btnSave" style="width:100%;height:48px;margin-top:16px;font-size:14px">SIMPAN PRODUK</button>
+      <button class="btn" id="btnClear" style="width:100%;margin-top:8px">BATAL / FORM BARU</button>
+
+      <div class="guide">
+        <b>SETTING GLOBAL</b>
+        <label class="lbl">Global Amazon Tag (dipakai kalau produk tidak punya link afiliasi/tag sendiri)</label>
+        <div class="row" style="flex-wrap:nowrap"><input type="text" id="globalTag" maxlength="40"><button class="btn sm" id="btnTag" style="height:42px">SIMPAN</button></div>
+        <div style="margin-top:14px"><b>AMBIL DATA DARI AMAZON</b>
+          <ol>
+            <li>Di halaman produk amazon.com, jalankan bookmarklet / userscript lama Anda (salin data).</li>
+            <li>Balik ke sini, tekan <b>TEMPEL DATA</b>.</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <input type="text" id="listSearch" placeholder="Cari produk di daftar..." style="margin-bottom:12px;border-radius:999px;padding:0 16px">
+      <div id="count" class="sub" style="margin:0 0 10px"></div>
+      <div id="list"></div>
+    </div>
+  </div>
+</div>
+<div id="toast"></div>
+<script src="/admin/admin.js"></script>
+</body>
+</html>
