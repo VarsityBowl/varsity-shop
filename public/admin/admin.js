@@ -13,6 +13,8 @@
     [/\bsilver\b/i, '#c0c0c0'], [/\bteal\b|\bcyan\b/i, '#0d9488'], [/\bcream\b|\bivory\b/i, '#fef3c7']
   ];
   var products = [];
+  var taxo = { customCats: [], subCats: {} };
+  var lastCrumbs = [];
   var currentSpecs = [];
   var toastTimer = null;
 
@@ -80,18 +82,125 @@
     return api('/api/admin/products').then(function (d) {
       products = d.products || [];
       $('globalTag').value = d.globalTag || '';
-      var cats = {}; CATS.forEach(function (c) { cats[c] = 1; }); products.forEach(function (p) { cats[p.category] = 1; });
-      var dl = $('catList'); dl.textContent = '';
-      Object.keys(cats).forEach(function (c) { var o = document.createElement('option'); o.value = c; dl.appendChild(o); });
+      taxo = d.taxo && typeof d.taxo === 'object' ? d.taxo : { customCats: [], subCats: {} };
+      taxo.customCats = taxo.customCats || []; taxo.subCats = taxo.subCats || {};
+      buildCat($('f_category').value || 'Jersey'); buildSub($('f_subcat').value || '');
       renderList();
     }).catch(function (e) { toast('Gagal memuat: ' + e.message, true); });
   }
 
+  /* ---------- kategori & sub kategori ---------- */
+  function norm(s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); }
+  function cleanName(s) { return String(s || '').replace(/[<>"]/g, '').replace(/\s+/g, ' ').trim().slice(0, 40); }
+  function uniq(list) {
+    var seen = {}, out = [];
+    list.forEach(function (x) { var k = norm(x); if (k && !seen[k]) { seen[k] = 1; out.push(x); } });
+    return out;
+  }
+  function allCats(extra) {
+    return uniq(CATS.concat(taxo.customCats, products.map(function (p) { return p.category; }), extra ? [extra] : []));
+  }
+  function subsFor(cat, extra) {
+    var fromProducts = products.filter(function (p) { return p.category === cat && p.subCategory; }).map(function (p) { return p.subCategory; });
+    return uniq((taxo.subCats[cat] || []).concat(fromProducts, extra ? [extra] : []));
+  }
+  function fillSelect(sel, items, selected, firstEmpty) {
+    sel.textContent = '';
+    if (firstEmpty) { var o0 = document.createElement('option'); o0.value = ''; o0.textContent = firstEmpty; sel.appendChild(o0); }
+    items.forEach(function (x) { var o = document.createElement('option'); o.value = x; o.textContent = x; sel.appendChild(o); });
+    sel.value = selected || '';
+    if (sel.value !== (selected || '')) sel.selectedIndex = 0;
+  }
+  function buildCat(selected) {
+    fillSelect($('f_category'), allCats(selected), selected || 'Jersey');
+    updateTaxoButtons();
+  }
+  function buildSub(selected) {
+    var cat = $('f_category').value;
+    fillSelect($('f_subcat'), subsFor(cat, selected), selected || '', '- Tanpa sub kategori -');
+    updateTaxoButtons();
+  }
+  function updateTaxoButtons() {
+    var cat = $('f_category').value, sub = $('f_subcat').value;
+    var isCustomCat = taxo.customCats.some(function (c) { return norm(c) === norm(cat); }) && CATS.indexOf(cat) < 0;
+    $('btnDelCat').classList.toggle('hidden', !isCustomCat);
+    $('btnDelSub').classList.toggle('hidden', !(sub && (taxo.subCats[cat] || []).indexOf(sub) > -1));
+  }
+  function saveTaxo() {
+    return api('/api/admin/taxonomy', { method: 'POST', body: JSON.stringify({ taxo: taxo }) })
+      .then(function (d) { if (d && d.taxo) taxo = d.taxo; });
+  }
+  function renderChips() {
+    ['cat', 'sub'].forEach(function (kind) {
+      var box = $('chips_' + kind); box.textContent = '';
+      if (!lastCrumbs.length) return;
+      box.appendChild(el('span', 'cap', 'Saran dari Amazon (ketuk untuk isi):'));
+      lastCrumbs.forEach(function (c) {
+        var b = el('button', null, c); b.type = 'button';
+        b.onclick = function () { $(kind === 'cat' ? 'newCatInput' : 'newSubInput').value = c; };
+        box.appendChild(b);
+      });
+    });
+  }
+  function toggleAdd(kind) {
+    var box = $(kind === 'cat' ? 'addCatBox' : 'addSubBox');
+    box.classList.toggle('hidden');
+    if (!box.classList.contains('hidden')) setTimeout(function () { $(kind === 'cat' ? 'newCatInput' : 'newSubInput').focus(); }, 50);
+  }
+  function addCategory() {
+    var inp = $('newCatInput'), name = cleanName(inp.value);
+    if (!name) { toast('Isi nama kategori dulu bos', true); return; }
+    var exist = allCats().filter(function (c) { return norm(c) === norm(name); })[0];
+    var finalName = exist || name;
+    inp.value = ''; $('addCatBox').classList.add('hidden');
+    if (exist) { buildCat(finalName); buildSub(''); toast('Kategori sudah ada, langsung dipilih ✅'); return; }
+    taxo.customCats.push(finalName);
+    buildCat(finalName); buildSub('');
+    saveTaxo().then(function () { toast('Kategori "' + finalName + '" disimpan permanen ✅'); })
+      .catch(function (e) { toast('Gagal simpan kategori: ' + e.message, true); });
+  }
+  function addSubCategory() {
+    var cat = $('f_category').value, inp = $('newSubInput'), name = cleanName(inp.value);
+    if (!cat) { toast('Pilih kategori dulu bos', true); return; }
+    if (!name) { toast('Isi nama sub kategori dulu bos', true); return; }
+    var exist = subsFor(cat).filter(function (x) { return norm(x) === norm(name); })[0];
+    var finalName = exist || name;
+    inp.value = ''; $('addSubBox').classList.add('hidden');
+    if (exist) { buildSub(finalName); toast('Sub kategori sudah ada, langsung dipilih ✅'); return; }
+    if (!taxo.subCats[cat]) taxo.subCats[cat] = [];
+    taxo.subCats[cat].push(finalName);
+    buildSub(finalName);
+    saveTaxo().then(function () { toast('Sub kategori "' + finalName + '" disimpan permanen ✅'); })
+      .catch(function (e) { toast('Gagal simpan sub kategori: ' + e.message, true); });
+  }
+  function deleteCategory() {
+    var cat = $('f_category').value;
+    var used = products.filter(function (p) { return p.category === cat; }).length;
+    if (used) { alert('Kategori "' + cat + '" masih dipakai ' + used + ' produk bos. Pindahkan produknya dulu baru hapus.'); return; }
+    if (!confirm('Hapus kategori "' + cat + '" beserta sub kategorinya?')) return;
+    taxo.customCats = taxo.customCats.filter(function (c) { return c !== cat; });
+    delete taxo.subCats[cat];
+    buildCat('Jersey'); buildSub('');
+    saveTaxo().then(function () { toast('Kategori dihapus'); }).catch(function (e) { toast(e.message, true); });
+  }
+  function deleteSubCategory() {
+    var cat = $('f_category').value, sub = $('f_subcat').value;
+    if (!sub) return;
+    var used = products.filter(function (p) { return p.category === cat && p.subCategory === sub; }).length;
+    if (used) { alert('Sub kategori "' + sub + '" masih dipakai ' + used + ' produk bos. Pindahkan produknya dulu baru hapus.'); return; }
+    if (!confirm('Hapus sub kategori "' + sub + '"?')) return;
+    taxo.subCats[cat] = (taxo.subCats[cat] || []).filter(function (x) { return x !== sub; });
+    if (!taxo.subCats[cat].length) delete taxo.subCats[cat];
+    buildSub('');
+    saveTaxo().then(function () { toast('Sub kategori dihapus'); }).catch(function (e) { toast(e.message, true); });
+  }
+
   /* ---------- form ---------- */
   function clearForm() {
-    ['f_id', 'f_brand', 'f_name', 'f_sub', 'f_subcat', 'f_asin', 'f_aff', 'f_tag', 'f_price', 'f_colors', 'f_images', 'f_sizes', 'f_desc', 'f_details']
+    ['f_id', 'f_brand', 'f_name', 'f_sub', 'f_asin', 'f_aff', 'f_tag', 'f_price', 'f_colors', 'f_images', 'f_sizes', 'f_desc', 'f_details']
       .forEach(function (id) { $(id).value = ''; });
-    $('f_category').value = 'Jersey'; $('f_rating').value = '4.6'; $('f_reviews').value = '100';
+    buildCat('Jersey'); buildSub(''); lastCrumbs = []; renderChips();
+    $('f_rating').value = '4.6'; $('f_reviews').value = '100';
     $('f_prime').checked = true; $('f_featured').checked = false; $('f_best').checked = false;
     $('pasteStatus').textContent = ''; currentSpecs = [];
   }
@@ -99,7 +208,7 @@
   function fillForm(p) {
     clearForm();
     $('f_id').value = p.id; $('f_brand').value = p.brand; $('f_name').value = p.name; $('f_sub').value = p.sub || '';
-    $('f_category').value = p.category; $('f_subcat').value = p.subCategory || '';
+    buildCat(p.category); buildSub(p.subCategory || '');
     $('f_asin').value = p.asin; $('f_aff').value = p.affLink || ''; $('f_tag').value = p.tag || ''; $('f_price').value = p.price || '';
     $('f_rating').value = p.rating; $('f_reviews').value = p.reviews;
     $('f_colors').value = (p.colors || []).map(function (c) { return [c.name, c.hex, c.image || ''].join(' | '); }).join('\n');
@@ -163,25 +272,15 @@
         if (d.reviews) $('f_reviews').value = d.reviews;
         if (d.desc) $('f_desc').value = d.desc;
         if (!$('f_sub').value && d.name) $('f_sub').value = d.name.split(' ').slice(-4).join(' ');
-        // Link afiliasi dari SiteStripe (sebelumnya tidak ikut terisi)
-        if (d.affLink) $('f_aff').value = d.affLink;
-        // Kategori: grabber mengirim `categoryList` (breadcrumb lengkap) dan/atau `category` (satu teks).
-        // Cari dari yang paling spesifik; cocok persis dulu, lalu cocok sebagian ("Football Jerseys" -> Jersey).
-        var crumbList = Array.isArray(d.categoryList) && d.categoryList.length ? d.categoryList : (d.category ? [d.category] : []);
-        var crumbs = crumbList.map(String).reverse(), hit = '', crumbHit = '';
-        var known = CATS.concat(products.map(function (p) { return p.category; }));
-        crumbs.forEach(function (c) {
-          if (hit) return;
-          known.forEach(function (k) { if (!hit && k.toLowerCase() === c.toLowerCase()) { hit = k; crumbHit = c; } });
-        });
-        if (!hit) crumbs.forEach(function (c) {
-          if (hit) return;
-          known.forEach(function (k) { if (!hit && c.toLowerCase().indexOf(k.toLowerCase()) > -1) { hit = k; crumbHit = c; } });
-        });
-        if (hit) $('f_category').value = hit;
-        // Sub-kategori: crumb paling spesifik kalau berbeda dari kategori terpilih
-        var specific = crumbs[0] || '';
-        if (!$('f_subcat').value && specific && specific.toLowerCase() !== (hit || '').toLowerCase()) $('f_subcat').value = specific.slice(0, 60);
+        var rawCrumbs = (d.categoryList || []).map(cleanName).filter(Boolean);
+        lastCrumbs = rawCrumbs; renderChips();
+        var crumbs = rawCrumbs.slice().reverse(), hit = '', subHit = '';
+        crumbs.forEach(function (c) { if (!hit) allCats().forEach(function (k) { if (!hit && norm(k) === norm(c)) hit = k; }); });
+        if (hit) {
+          buildCat(hit);
+          crumbs.forEach(function (c) { if (!subHit) subsFor(hit).forEach(function (k) { if (!subHit && norm(k) === norm(c)) subHit = k; }); });
+          buildSub(subHit);
+        }
         var imgs = (d.images || []).map(String);
         var cols = (d.colors || []).map(function (c, i) {
           var name = String((c && c.name) || c || '').trim(); if (!name) return null;
@@ -195,16 +294,7 @@
         $('f_sizes').value = (d.sizes || []).join(', ');
         $('f_details').value = (d.bullets || []).join('\n');
         currentSpecs = (d.specs || []).filter(function (s) { return s && s.label && s.value; });
-        var missing = [];
-        if (!d.price) missing.push('Harga');
-        if (!d.affLink) missing.push('Link afiliasi');
-        if (!hit) missing.push('Kategori');
-        if (!(d.sizes || []).length) missing.push('Ukuran');
-        if (!(d.bullets || []).length) missing.push('Poin fitur');
-        if (!currentSpecs.length) missing.push('Spesifikasi');
-        $('pasteStatus').textContent = '✅ Terisi: ' + String(d.name || '').slice(0, 60) + ' | Warna: ' + cols.length + ' | Foto: ' + imgs.length +
-          ' | Kategori: ' + (hit ? hit + (crumbHit && crumbHit.toLowerCase() !== hit.toLowerCase() ? ' (dari "' + crumbHit + '")' : '') : (d.category ? '"' + d.category + '" (isi manual)' : 'isi manual')) +
-          (missing.length ? ' | ⚠️ Belum terisi: ' + missing.join(', ') : '') + ' - cek dulu lalu SIMPAN.';
+        $('pasteStatus').textContent = '✅ Terisi: ' + String(d.name || '').slice(0, 60) + ' | Warna: ' + cols.length + ' | Foto: ' + imgs.length + ' | Kategori: ' + (hit ? hit + (subHit ? ' › ' + subHit : ' (sub kategori belum cocok)') : (d.category ? '"' + d.category + '" belum ada: pilih manual atau ketuk + Kategori baru' : 'isi manual')) + ' - cek dulu lalu SIMPAN.';
         toast('Data ditempel ✅');
       });
   }
@@ -241,6 +331,16 @@
   }
 
   /* ---------- init ---------- */
+  $('f_category').onchange = function () { buildSub(''); };
+  $('f_subcat').onchange = updateTaxoButtons;
+  $('btnAddCat').onclick = function () { toggleAdd('cat'); };
+  $('btnAddSub').onclick = function () { toggleAdd('sub'); };
+  $('btnSaveCat').onclick = addCategory;
+  $('btnSaveSub').onclick = addSubCategory;
+  $('btnDelCat').onclick = deleteCategory;
+  $('btnDelSub').onclick = deleteSubCategory;
+  $('newCatInput').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } };
+  $('newSubInput').onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); addSubCategory(); } };
   $('btnSave').onclick = save;
   $('btnClear').onclick = clearForm;
   $('btnPaste').onclick = pasteData;
@@ -260,5 +360,6 @@
       $('f_aff').value = v; this.value = ''; toast('Itu link afiliasi, dipindah ke kolom Link afiliasi ✅');
     }
   });
+  buildCat('Jersey'); buildSub('');
   load();
 })();
