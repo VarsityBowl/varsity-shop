@@ -34,6 +34,13 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#f97316}
 .tag.o{background:#f97316;color:#fff}.tag.g{background:#10b981;color:#fff}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#18181b;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;display:none;z-index:50;max-width:90vw}
 #toast.err{background:#dc2626}
+.hidden{display:none!important}
+.taxo-act{display:flex;gap:16px;margin-top:6px;font-size:12px}
+.lnk{background:none;border:0;padding:6px 0;font:inherit;font-weight:800;color:#f97316;cursor:pointer}.lnk.red{color:#dc2626;font-weight:600}
+.addbox{margin-top:6px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chips .cap{width:100%;font-size:11px;color:#6b7280}
+.chips button{padding:5px 10px;border-radius:999px;border:1px solid #fed7aa;background:#fff7ed;color:#ea580c;font:inherit;font-size:11px;font-weight:800;cursor:pointer}
 .guide{margin-top:18px;padding-top:14px;border-top:1px solid #e5e7eb;font-size:11px;color:#6b7280;line-height:1.5}
 .guide ol{padding-left:16px;margin:6px 0 0}
 </style>
@@ -61,9 +68,26 @@ input:focus,textarea:focus,select:focus{outline:none;border-color:#f97316}
       <label class="lbl">Nama Produk *</label><input type="text" id="f_name" maxlength="200">
       <label class="lbl">Sub nama</label><input type="text" id="f_sub" maxlength="120">
 
-      <div class="two">
-        <div><label class="lbl">Kategori</label><input type="text" id="f_category" list="catList" maxlength="40" value="Jersey"><datalist id="catList"></datalist></div>
-        <div><label class="lbl">Sub kategori</label><input type="text" id="f_subcat" maxlength="40"></div>
+      <label class="lbl">Kategori</label>
+      <select id="f_category"></select>
+      <div class="taxo-act">
+        <button type="button" class="lnk" id="btnAddCat">+ Kategori baru</button>
+        <button type="button" class="lnk red hidden" id="btnDelCat">hapus</button>
+      </div>
+      <div class="addbox hidden" id="addCatBox">
+        <div class="row" style="flex-wrap:nowrap"><input type="text" id="newCatInput" maxlength="40" autocomplete="off" placeholder="Nama kategori baru"><button type="button" class="btn pri sm" id="btnSaveCat" style="height:42px">SIMPAN</button></div>
+        <div class="chips" id="chips_cat"></div>
+      </div>
+
+      <label class="lbl">Sub kategori</label>
+      <select id="f_subcat"></select>
+      <div class="taxo-act">
+        <button type="button" class="lnk" id="btnAddSub">+ Sub kategori baru</button>
+        <button type="button" class="lnk red hidden" id="btnDelSub">hapus</button>
+      </div>
+      <div class="addbox hidden" id="addSubBox">
+        <div class="row" style="flex-wrap:nowrap"><input type="text" id="newSubInput" maxlength="40" autocomplete="off" placeholder="Nama sub kategori baru"><button type="button" class="btn pri sm" id="btnSaveSub" style="height:42px">SIMPAN</button></div>
+        <div class="chips" id="chips_sub"></div>
       </div>
 
       <label class="lbl">ASIN * (boleh tempel link amazon.com/dp/...)</label>
