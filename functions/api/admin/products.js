@@ -1,10 +1,11 @@
-import { rowToProduct, getMeta, saveProducts, deleteProduct } from '../../../lib/db.js';
+import { rowToProduct, getMeta, getTaxo, saveProducts, deleteProduct } from '../../../lib/db.js';
 import { jsonResponse } from '../../../lib/util.js';
 
 export async function onRequestGet({ env }) {
   const { results } = await env.DB.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
   const meta = await getMeta(env.DB);
-  return jsonResponse({ products: results.map(rowToProduct), globalTag: meta.globalTag });
+  const taxo = await getTaxo(env.DB);
+  return jsonResponse({ products: results.map(rowToProduct), globalTag: meta.globalTag, taxo });
 }
 
 export async function onRequestPost({ request, env }) {
