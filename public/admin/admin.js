@@ -49,6 +49,16 @@
     return '#f97316';
   }
   function upscale(u) { return String(u || '').replace(/\._[^./]+_\.(jpg|jpeg|png)(\?.*)?$/i, '._AC_SX679_.$1'); }
+  // Sama dengan isValidAffLink() di server (lib/util.js)
+  function validAff(u) {
+    if (!/^https:\/\/[^\s"'<>]+$/i.test(u)) return false;
+    try {
+      var url = new URL(u), h = url.hostname.toLowerCase();
+      if (['link.amazon', 'amzn.to', 'a.co', 'amzn.com'].indexOf(h) > -1) return true;
+      if (/(^|\.)amazon\.[a-z.]+$/.test(h) && url.searchParams.get('tag')) return true;
+    } catch (e) { /* abaikan */ }
+    return false;
+  }
   function lines(v) { return String(v || '').split(/\r?\n/).map(function (s) { return s.trim(); }).filter(Boolean); }
 
   /* ---------- daftar ---------- */
@@ -264,6 +274,12 @@
         if (!txt || !txt.trim()) return;
         var d; try { d = JSON.parse(txt); } catch (e) { d = null; }
         if (!d || d.vb !== 1) { toast('Itu bukan data dari bookmarklet', true); return; }
+        var affMsg = 'kosong (pakai ASIN + tag)';
+        var aff = String(d.affLink || '').replace(/\s+/g, '');
+        if (aff) {
+          if (validAff(aff)) { $('f_aff').value = aff; affMsg = 'ada ✓'; }
+          else { affMsg = 'ditolak (format tidak cocok: ' + aff.slice(0, 40) + ')'; toast('Link afiliasi dari data tidak valid, dilewati', true); }
+        }
         if (d.asin) $('f_asin').value = d.asin;
         if (d.name) $('f_name').value = d.name;
         if (d.brand) $('f_brand').value = d.brand;
@@ -294,7 +310,7 @@
         $('f_sizes').value = (d.sizes || []).join(', ');
         $('f_details').value = (d.bullets || []).join('\n');
         currentSpecs = (d.specs || []).filter(function (s) { return s && s.label && s.value; });
-        $('pasteStatus').textContent = '✅ Terisi: ' + String(d.name || '').slice(0, 60) + ' | Warna: ' + cols.length + ' | Foto: ' + imgs.length + ' | Kategori: ' + (hit ? hit + (subHit ? ' › ' + subHit : ' (sub kategori belum cocok)') : (d.category ? '"' + d.category + '" belum ada: pilih manual atau ketuk + Kategori baru' : 'isi manual')) + ' - cek dulu lalu SIMPAN.';
+        $('pasteStatus').textContent = '✅ Terisi: ' + String(d.name || '').slice(0, 60) + ' | Warna: ' + cols.length + ' | Foto: ' + imgs.length + ' | Kategori: ' + (hit ? hit + (subHit ? ' › ' + subHit : ' (sub kategori belum cocok)') : (d.category ? '"' + d.category + '" belum ada: pilih manual atau ketuk + Kategori baru' : 'isi manual')) + ' | Link afiliasi: ' + affMsg + ' - cek dulu lalu SIMPAN.';
         toast('Data ditempel ✅');
       });
   }
