@@ -212,7 +212,7 @@
       .forEach(function (id) { $(id).value = ''; });
     buildCat('Jersey'); buildSub(''); lastCrumbs = []; renderChips();
     $('f_rating').value = '4.6'; $('f_reviews').value = '100';
-    $('f_prime').checked = false; $('f_featured').checked = true; $('f_best').checked = false;
+    $('f_prime').checked = false; $('f_featured').checked = false; $('f_best').checked = false;
     $('pasteStatus').textContent = ''; currentSpecs = [];
   }
 
