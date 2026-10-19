@@ -2,7 +2,7 @@ import { rowToProduct, getMeta, getTaxo, saveProducts, deleteProduct } from '../
 import { jsonResponse } from '../../../lib/util.js';
 
 export async function onRequestGet({ env }) {
-  const { results } = await env.DB.prepare('SELECT * FROM products ORDER BY created_at DESC').all();
+  const { results } = await env.DB.prepare('SELECT * FROM products ORDER BY featured DESC, created_at DESC').all();
   const meta = await getMeta(env.DB);
   const taxo = await getTaxo(env.DB);
   return jsonResponse({ products: results.map(rowToProduct), globalTag: meta.globalTag, taxo });
